@@ -30,3 +30,7 @@
 # knitr and R markdown default cache directories
 *_cache
 *_files 
+
+
+# File with comments
+NotesMatchesOriginAndGithubFolders
