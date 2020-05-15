@@ -1,0 +1,2786 @@
+---
+title: "Model posterior distributions - P3 partition"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width = 5,fig.height = 4,cache=TRUE,echo=F)
+options(width = 300)
+library(knitr)
+library(broom)
+library(latex2exp)
+library(cowplot)
+library(ggplot2)
+library(ggpubr)
+library(stringi)
+library(tidybayes)
+library(dplyr)
+library(bayesplot)
+color_scheme_set("green")
+library(devtools)
+library(xtable)
+library(ggridges)
+library(tidyverse)
+library(tibble)
+library(brms)
+```
+
+
+<!-- Functions used -->
+
+```{r funtions_used}
+source("../../scripts/Functions/vir_lite.R")
+square <- function(x) (x*x)
+
+# Parameters of the funtion vir_lite
+ds=0.7
+```
+
+
+In the Supplementary Information, we will report the medians of the posterior distributions, but both the medians and the means are shown in this document. 
+
+
+The credible intervals used are 95% CI.
+
+```{r CredibleIntervalsUsed}
+prob=0.95
+probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
+```
+
+
+```{r LoadDATA}
+data <- readRDS(file="../../data/datatrain_pheno-clim-soil_23042020_28provs_Rep.RDS")
+```
+
+
+# **Model M0**
+
+```{r loadM0}
+mod <- readRDS(file="../../outputs/models/P3/MOD0.rds")
+```
+
+
+## Main parameters
+
+### Standard deviations
+
+#### Mean
+
+```{r TableM0SDMean, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median
+
+```{r TableM0SDMedian, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+#### Figs
+
+```{r M0MCMCIntervals, fig.width=10,fig.height=3,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
+                    prob=prob,prob_outer = 1,point_est = "median") +  theme_bw() + 
+  scale_y_discrete(labels=c("sigma"=parse(text=TeX("$\\sigma$")),
+                            'b_Intercept'=parse(text = TeX("$\\beta_{0}$")),
+                            "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
+                            "sd_site:block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_prov:clon__Intercept"=parse(text = TeX("$\\sigma_{G_{P}}$")),
+                            "sd_clon__Intercept"=parse(text = TeX("$\\sigma_{G_{P}}$")),
+                            "sd_prov__Intercept"=parse(text = TeX("$\\sigma_{P}$")),
+                            "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")))) +
+  theme(axis.text = element_text(size=16))
+```
+
+
+
+### Variances
+
+#### Mean 
+
+```{r TableM0VARMean, echo=F, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Mean"] <- mean(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median
+
+In the Supplementary Information.
+
+```{r TableM0VARMedian, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Median"] <- median(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+
+# tab <- bind_rows(df,df2)
+# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M0_MainVarPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+#### Figs
+
+In the Supplementary Information.
+
+```{r M0VARFigs,fig.height=6, fig.width=10,warning=F,message=F}
+p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_prov|sd_site:block|sigma)",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_prov:clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_prov__Intercept)"=parse(text = TeX("$\\sigma^{2}_{P}$")),
+                            "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
+                            "square(sigma)"=parse(text = TeX("$\\sigma^{2}$"))
+                            )) 
+
+p2 <- mod %>%  mcmc_intervals(regex_pars = "sd_site__Intercept",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{S}$")))) 
+
+p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")),
+                            "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
+
+p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(1,0.3,0.7),nrow=3,vjust=c(1.3,0.8,1))
+#ggsave(p,file="../../figs/SuppInfo/M0_PostMainVar_P3.png",height=8) 
+p
+```
+
+
+## Site intercepts
+
+### Tables
+
+#### Mean
+
+```{r TableM0MeanSiteIntercepts}
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^(r_site\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term,'r_site[asturias,Intercept]'="$S_{Asturias}$",
+                              'r_site[bordeaux,Intercept]'= '$S_{Bordeaux}$',
+                              'r_site[caceres,Intercept]'='$S_{Caceres}$',
+                              'r_site[madrid,Intercept]'='$S_{Madrid}$',
+                              'r_site[portugal,Intercept]'="$S_{Portugal}$"))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median 
+
+In the Supplementary Information.
+
+```{r TableM0MedianSiteIntercepts}
+df <- mod %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level = 0.95) %>% 
+  filter(str_detect(term, "^(r_site\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Median"=Estimate,"SD"=Std.error,"InfCI"=Conf.low,"SupCI"=Conf.high) %>% 
+  mutate(Parameter = recode_factor(Term,'r_site[asturias,Intercept]'="$S_{Asturias}$",
+                              'r_site[bordeaux,Intercept]'= '$S_{Bordeaux}$',
+                              'r_site[caceres,Intercept]'='$S_{Caceres}$',
+                              'r_site[madrid,Intercept]'='$S_{Madrid}$',
+                              'r_site[portugal,Intercept]'="$S_{Portugal}$")) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+df %>% knitr::kable(digits = 3 ,format = "markdown") 
+
+# print(xtable(df, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M0_SiteInterceptsPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+### Figs
+
+#### MCMC intervals
+
+```{r M0SiteInterceptsMCMCintervals, fig.width=8,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^r_site\\[",
+                    prob=prob,prob_outer = 1,point_est = "mean") +  theme_bw() + 
+  scale_y_discrete(labels=c('r_site[asturias,Intercept]'=parse(text = TeX("$S_{Asturias}$")),
+                              'r_site[bordeaux,Intercept]'=parse(text = TeX("$S_{Bordeaux}$")),
+                              'r_site[caceres,Intercept]'=parse(text = TeX("$S_{Caceres}$")),
+                              'r_site[madrid,Intercept]'=parse(text = TeX("$S_{Madrid}$")),
+                              'r_site[portugal,Intercept]'=parse(text = TeX("$S_{Portugal}$"))
+                            )) +
+  theme(axis.text = element_text(size=16))
+```
+
+#### Density ridges
+
+In the Supplementary Information.
+
+```{r M0SiteInterceptsDensityRidges, fig.height=5,fig.width=8,warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_site\\[")
+colnames(POST) <- str_sub(colnames(POST),8,-12) %>% str_to_title()
+POST <- as.data.frame(t(POST))
+POST$sites <- as.factor(rownames(POST))
+
+posteriorsimpelmodellong <- POST %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -sites)
+
+sum <- posteriorsimpelmodellong  %>% 
+   group_by(sites) %>%
+   dplyr::summarize(mean=mean(value)) 
+
+p <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = sites,
+                                    fill   = as.factor(sites),
+                                    vline_color = ..quantile..),
+                                scale = 1.8, 
+                                alpha = .8,
+                                size=0.8,
+                                rel_min_height=.001,
+                                quantile_lines = TRUE, 
+                                quantiles = c(0.025,0.5,0.975)) +
+  scale_y_discrete(labels=c("Caceres"=parse(text = TeX("$S_{Caceres}$")),
+                            "Bordeaux"=parse(text = TeX("$S_{Bordeaux}$")),
+                            "Portugal"=parse(text = TeX("$S_{Portugal}$")),
+                            "Madrid"=parse(text = TeX("$S_{Madrid}$")),
+                            "Asturias"=parse(text = TeX("$S_{Asturias}$"))
+                            )) +
+  # coord_cartesian(c(-,0.8))+
+  scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("5% & 95% quantiles", "mean"),
+                        name = NULL) +
+  labs(title="",
+       y        = "", 
+       x        = TeX("Estimate of the site intercept $S_{s}$")
+       ) + 
+  scale_fill_manual(values=c(vir_lite("cyan2",ds=ds),
+                             vir_lite("navyblue",ds=ds),
+                             vir_lite("pink",ds=ds),
+                             vir_lite("deeppink",ds=ds),
+                             vir_lite("dodgerblue2",ds=ds)
+                             )) +
+  theme_bw() + theme(axis.text = element_text(size=22),axis.title = element_text(size=22), 
+                     legend.position = "none",plot.title = element_text(size=22))
+
+p
+# ggsave(p,file="../../figs/SuppInfo/M0_SiteInterceptsPost_P3.png",height=7,width=12)
+```
+
+
+
+# **Model M1**
+
+```{r loadM1}
+mod <- readRDS(file="../../outputs/models/P3/MOD1.rds")
+```
+
+
+
+
+## Main parameters
+
+### Standard deviations
+
+#### Mean
+
+```{r TableM1SDMean, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median
+
+```{r TableM1SDMedian, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+#### Figs
+
+```{r M1MCMCIntervals, fig.width=10,fig.height=3,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
+                    prob=prob,prob_outer = 1,point_est = "median") +  theme_bw() + 
+  scale_y_discrete(labels=c("sigma"=parse(text=TeX("$\\sigma$")),
+                            'b_Intercept'=parse(text = TeX("$\\beta_{0}$")),
+                            "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
+                            "sd_site:block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_prov:clon__Intercept"=parse(text = TeX("$\\sigma_{G_{P}}$")),
+                            "sd_clon__Intercept"=parse(text = TeX("$\\sigma_{G_{P}}$")),
+                            "sd_prov__Intercept"=parse(text = TeX("$\\sigma_{P}$")),
+                            "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")))) +
+  theme(axis.text = element_text(size=16))
+```
+
+
+
+### Variances
+
+#### Mean 
+
+```{r TableM1VARMean, echo=F, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Mean"] <- mean(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+
+#### Median
+
+In the Supplementary Information.
+
+```{r TableM1VARMedian, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Median"] <- median(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+
+# tab <- bind_rows(df,df2)
+# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_MainVarPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+#### Figs
+
+In the Supplementary Information.
+
+```{r M1VARFigs,fig.height=6, fig.width=10,warning=F,message=F}
+p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_prov|sd_site:block|sigma)",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_prov:clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_prov__Intercept)"=parse(text = TeX("$\\sigma^{2}_{P}$")),
+                            "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
+                            "square(sigma)"=parse(text = TeX("$\\sigma^{2}$"))
+                            )) 
+
+p2 <- mod %>%  mcmc_intervals(regex_pars = "sd_site__Intercept",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{S}$")))) 
+
+p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")),
+                            "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
+
+p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(1,0.3,0.7),nrow=3,vjust=c(1.3,0.8,1))
+#ggsave(p,file="../../figs/SuppInfo/M1_PostMainVar_P3.png",height=8) 
+p
+```
+
+
+## Site intercepts
+
+### Tables
+
+#### Mean
+
+```{r TableM1MeanSiteIntercepts}
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^(r_site\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term,'r_site[asturias,Intercept]'="$S_{Asturias}$",
+                              'r_site[bordeaux,Intercept]'= '$S_{Bordeaux}$',
+                              'r_site[caceres,Intercept]'='$S_{Caceres}$',
+                              'r_site[madrid,Intercept]'='$S_{Madrid}$',
+                              'r_site[portugal,Intercept]'="$S_{Portugal}$"))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median 
+
+In the Supplementary Information.
+
+```{r TableM1MedianSiteIntercepts}
+df <- mod %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level = 0.95) %>% 
+  filter(str_detect(term, "^(r_site\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Median"=Estimate,"SD"=Std.error,"InfCI"=Conf.low,"SupCI"=Conf.high) %>% 
+  mutate(Parameter = recode_factor(Term,'r_site[asturias,Intercept]'="$S_{Asturias}$",
+                              'r_site[bordeaux,Intercept]'= '$S_{Bordeaux}$',
+                              'r_site[caceres,Intercept]'='$S_{Caceres}$',
+                              'r_site[madrid,Intercept]'='$S_{Madrid}$',
+                              'r_site[portugal,Intercept]'="$S_{Portugal}$")) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+df %>% knitr::kable(digits = 3 ,format = "markdown") 
+
+# print(xtable(df, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_SiteInterceptsPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+### Figs
+
+#### MCMC intervals
+
+```{r M1SiteInterceptsMCMCintervals, fig.width=8,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^r_site\\[",
+                    prob=prob,prob_outer = 1,point_est = "mean") +  theme_bw() + 
+  scale_y_discrete(labels=c('r_site[asturias,Intercept]'=parse(text = TeX("$S_{Asturias}$")),
+                              'r_site[bordeaux,Intercept]'=parse(text = TeX("$S_{Bordeaux}$")),
+                              'r_site[caceres,Intercept]'=parse(text = TeX("$S_{Caceres}$")),
+                              'r_site[madrid,Intercept]'=parse(text = TeX("$S_{Madrid}$")),
+                              'r_site[portugal,Intercept]'=parse(text = TeX("$S_{Portugal}$"))
+                            )) +
+  theme(axis.text = element_text(size=16))
+```
+
+#### Density ridges
+
+In the Supplementary Information.
+
+```{r M1SiteInterceptsDensityRidges, fig.height=5,fig.width=8,warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_site\\[")
+colnames(POST) <- str_sub(colnames(POST),8,-12) %>% str_to_title()
+POST <- as.data.frame(t(POST))
+POST$sites <- as.factor(rownames(POST))
+
+posteriorsimpelmodellong <- POST %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -sites)
+
+sum <- posteriorsimpelmodellong  %>% 
+   group_by(sites) %>%
+   dplyr::summarize(mean=mean(value)) 
+
+p <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = sites,
+                                    fill   = as.factor(sites),
+                                    vline_color = ..quantile..),
+                                scale = 1.8, 
+                                alpha = .8,
+                                size=0.8,
+                                rel_min_height=.001,
+                                quantile_lines = TRUE, 
+                                quantiles = c(0.025,0.5,0.975)) +
+  scale_y_discrete(labels=c("Caceres"=parse(text = TeX("$S_{Caceres}$")),
+                            "Bordeaux"=parse(text = TeX("$S_{Bordeaux}$")),
+                            "Portugal"=parse(text = TeX("$S_{Portugal}$")),
+                            "Madrid"=parse(text = TeX("$S_{Madrid}$")),
+                            "Asturias"=parse(text = TeX("$S_{Asturias}$"))
+                            )) +
+  # coord_cartesian(c(-,0.8))+
+  scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("5% & 95% quantiles", "mean"),
+                        name = NULL) +
+  labs(title="",
+       y        = "", 
+       x        = TeX("Estimate of the site intercept $S_{s}$")
+       ) + 
+  scale_fill_manual(values=c(vir_lite("cyan2",ds=ds),
+                             vir_lite("navyblue",ds=ds),
+                             vir_lite("pink",ds=ds),
+                             vir_lite("deeppink",ds=ds),
+                             vir_lite("dodgerblue2",ds=ds)
+                             )) +
+  theme_bw() + theme(axis.text = element_text(size=22),axis.title = element_text(size=22), 
+                     legend.position = "none",plot.title = element_text(size=22))
+
+p
+# ggsave(p,file="../../figs/SuppInfo/M1_SiteInterceptsPost_P3.png",height=7,width=12)
+```
+
+
+## Conditional effect of age
+
+In the Supplementary Information.
+
+```{r M1AgeEffect,fig.width=5}
+p <- plot(conditional_effects(mod,"age.sc"),plot=FALSE)[[1]] + 
+  xlab("Mean-centered age") + 
+  ylab("Logarithm of height (mm)") +
+  theme_bw()
+p
+#ggsave(p,file="../../figs/SuppInfo/M1_CondEffectAge_P3.png",height=6,width=6)
+```
+
+
+## Provenance intercepts
+
+### Table 
+
+#### Mean 
+
+```{r TableM1MeanProvIntercepts}
+# provs <- unique(data$prov)
+# par <-paste(paste0("'r_prov[",provs,",Intercept]'")) 
+# par2 <-paste(paste0("'$P_{",provs,"}$'")) 
+# tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^(r_prov\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 'r_prov[MIM,Intercept]' = '$P_{MIM}$','r_prov[CEN,Intercept]' = '$P_{CEN}$','r_prov[ORI,Intercept]' = '$P_{ORI}$','r_prov[STJ,Intercept]' = '$P_{STJ}$','r_prov[HOU,Intercept]' = '$P_{HOU}$','r_prov[CUE,Intercept]' = '$P_{CUE}$','r_prov[TAM,Intercept]' = '$P_{TAM}$','r_prov[LEI,Intercept]' = '$P_{LEI}$','r_prov[VER,Intercept]' = '$P_{VER}$','r_prov[CAS,Intercept]' = '$P_{CAS}$','r_prov[PIA,Intercept]' = '$P_{PIA}$','r_prov[ARM,Intercept]' = '$P_{ARM}$','r_prov[PET,Intercept]' = '$P_{PET}$','r_prov[VAL,Intercept]' = '$P_{VAL}$','r_prov[SAL,Intercept]' = '$P_{SAL}$','r_prov[OLO,Intercept]' = '$P_{OLO}$','r_prov[CAD,Intercept]' = '$P_{CAD}$','r_prov[ARN,Intercept]' = '$P_{ARN}$','r_prov[BAY,Intercept]' = '$P_{BAY}$','r_prov[SIE,Intercept]' = '$P_{SIE}$','r_prov[SEG,Intercept]' = '$P_{SEG}$','r_prov[PLE,Intercept]' = '$P_{PLE}$','r_prov[BON,Intercept]' = '$P_{BON}$','r_prov[COC,Intercept]' = '$P_{COC}$','r_prov[SAC,Intercept]' = '$P_{SAC}$','r_prov[QUA,Intercept]' = '$P_{QUA}$','r_prov[CAR,Intercept]' = '$P_{CAR}$','r_prov[OLB,Intercept]' = '$P_{OLB}$','r_prov[PIE,Intercept]' = '$P_{PIE}$','r_prov[PUE,Intercept]' = '$P_{PUE}$','r_prov[ALT,Intercept]' = '$P_{ALT}$','r_prov[LAM,Intercept]' = '$P_{LAM}$','r_prov[MAD,Intercept]' = '$P_{MAD}$','r_prov[COM,Intercept]' = '$P_{COM}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+#### Median
+
+In the Supplementary Information.
+
+```{r TableM1MedianProvIntercepts}
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^(r_prov\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Median"=Estimate,"SD"=Std.error,"InfCI"=Conf.low,"SupCI"=Conf.high) %>% 
+  mutate(Parameter= recode_factor(Term, 'r_prov[MIM,Intercept]' = '$P_{MIM}$','r_prov[CEN,Intercept]' = '$P_{CEN}$','r_prov[ORI,Intercept]' = '$P_{ORI}$','r_prov[STJ,Intercept]' = '$P_{STJ}$','r_prov[HOU,Intercept]' = '$P_{HOU}$','r_prov[CUE,Intercept]' = '$P_{CUE}$','r_prov[TAM,Intercept]' = '$P_{TAM}$','r_prov[LEI,Intercept]' = '$P_{LEI}$','r_prov[VER,Intercept]' = '$P_{VER}$','r_prov[CAS,Intercept]' = '$P_{CAS}$','r_prov[PIA,Intercept]' = '$P_{PIA}$','r_prov[ARM,Intercept]' = '$P_{ARM}$','r_prov[PET,Intercept]' = '$P_{PET}$','r_prov[VAL,Intercept]' = '$P_{VAL}$','r_prov[SAL,Intercept]' = '$P_{SAL}$','r_prov[OLO,Intercept]' = '$P_{OLO}$','r_prov[CAD,Intercept]' = '$P_{CAD}$','r_prov[ARN,Intercept]' = '$P_{ARN}$','r_prov[BAY,Intercept]' = '$P_{BAY}$','r_prov[SIE,Intercept]' = '$P_{SIE}$','r_prov[SEG,Intercept]' = '$P_{SEG}$','r_prov[PLE,Intercept]' = '$P_{PLE}$','r_prov[BON,Intercept]' = '$P_{BON}$','r_prov[COC,Intercept]' = '$P_{COC}$','r_prov[SAC,Intercept]' = '$P_{SAC}$','r_prov[QUA,Intercept]' = '$P_{QUA}$','r_prov[CAR,Intercept]' = '$P_{CAR}$','r_prov[OLB,Intercept]' = '$P_{OLB}$','r_prov[PIE,Intercept]' = '$P_{PIE}$','r_prov[PUE,Intercept]' = '$P_{PUE}$','r_prov[ALT,Intercept]' = '$P_{ALT}$','r_prov[LAM,Intercept]' = '$P_{LAM}$','r_prov[MAD,Intercept]' = '$P_{MAD}$','r_prov[COM,Intercept]' = '$P_{COM}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+
+# print(xtable(df, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_ProvInterceptsPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+### Figs
+
+<!-- #### MCMC intervals -->
+
+```{r M1ProvInterceptsMCMCintervals, fig.height=8,fig.width=10,warning=F,message=F,eval=F}
+mod %>%  mcmc_intervals(regex_pars = "^r_prov\\[",
+                    prob=prob,prob_outer = 1,point_est = "mean") +  theme_bw() + 
+
+  theme(axis.text = element_text(size=16))
+```
+
+#### Density Ridges
+
+```{r M1ProvInterceptsDensityRidges, fig.width=10,fig.height=8,warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_prov\\[")
+colnames(POST) <- str_sub(colnames(POST),8,-12)
+POST <- as.data.frame(t(POST))
+POST$prov <- as.factor(rownames(POST))
+
+data <- droplevels(data)
+ps <- data %>%
+  dplyr::group_by(prov) %>% 
+  dplyr::summarise_at(vars(paste0(rep("Q",6),1:6)), mean)
+ps$max.Q.prov <- colnames(ps[,2:7])[apply(ps[,2:7],1,which.max)]
+ps$prov <- as.factor(ps$prov)
+
+posteriorsimpelmodellong <- inner_join(POST, ps[,c("prov","max.Q.prov")],by="prov") %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -prov,-max.Q.prov)%>%
+  group_by(prov) %>%
+  dplyr::mutate(meanperprov = mean(value))%>%
+  ungroup()
+
+p <- ggplot()+
+  geom_vline(xintercept = 0, 
+             col        = "grey70") +
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(prov), meanperprov),
+                                    height = ..density.., 
+                                    fill   = as.factor(max.Q.prov)),
+                                scale = 3, 
+                                alpha = .6,
+                                rel_min_height=.01,
+                                size=0.3,quantile_lines = TRUE, quantiles = c(0.05,0.95)) +
+  scale_y_discrete(labels=c("ALT"=parse(text = TeX("$P_{ALT}$")),
+                            "ARM"=parse(text = TeX("$P_{ARM}$")),
+                            "ARN"=parse(text = TeX("$P_{ARN}$")),
+                            "BAY"=parse(text = TeX("$P_{BAY}$")),
+                            "BON"=parse(text = TeX("$P_{BON}$")),
+                            "CAD"=parse(text = TeX("$P_{CAD}$")),
+                            "CAR"=parse(text = TeX("$P_{CAR}$")),
+                            "CAS"=parse(text = TeX("$P_{CAS}$")),
+                            "CEN"=parse(text = TeX("$P_{CEN}$")),
+                            "COC"=parse(text = TeX("$P_{COC}$")),
+                            "COM"=parse(text = TeX("$P_{COM}$")),
+                            "CUE"=parse(text = TeX("$P_{CUE}$")),
+                            "HOU"=parse(text = TeX("$P_{HOU}$")),
+                            "LAM"=parse(text = TeX("$P_{LAM}$")),
+                            "LEI"=parse(text = TeX("$P_{LEI}$")),
+                            "MAD"=parse(text = TeX("$P_{MAD}$")),
+                            "MIM"=parse(text = TeX("$P_{MIM}$")),
+                            "OLB"=parse(text = TeX("$P_{OLB}$")),
+                            "OLO"=parse(text = TeX("$P_{OLO}$")),
+                            "ORI"=parse(text = TeX("$P_{ORI}$")),
+                            "PET"=parse(text = TeX("$P_{PET}$")),
+                            "PIA"=parse(text = TeX("$P_{PIA}$")),
+                            "PIE"=parse(text = TeX("$P_{PIE}$")),
+                            "PLE"=parse(text = TeX("$P_{PLE}$")),
+                            "PUE"=parse(text = TeX("$P_{PUE}$")),
+                            "QUA"=parse(text = TeX("$P_{QUA}$")),
+                            "SAC"=parse(text = TeX("$P_{SAC}$")),
+                            "SAL"=parse(text = TeX("$P_{SAL}$")),
+                            "SEG"=parse(text = TeX("$P_{SEG}$")),
+                            "SIE"=parse(text = TeX("$P_{SIE}$")),
+                            "STJ"=parse(text = TeX("$P_{STJ}$")),
+                            "TAM"=parse(text = TeX("$P_{TAM}$")),
+                            "VAL"=parse(text = TeX("$P_{VAL}$")),
+                            "VER"=parse(text = TeX("$P_{VER}$")))) +
+   coord_cartesian(xlim=c(-0.4,0.25))+ # ,ylim=c(1,37)
+  scale_fill_manual(values=c("orangered3",
+                             "gold2",
+                             "darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Northern Africa", 
+                                                   "Corsica",
+                                                   "Central Spain",
+                                                   "French Atlantic",
+                                                   "Iberian Atlantic",
+                                                   "South-eastern Spain"),name="Gene pools") +
+  labs(fill     = "Gene pools",
+       y        = "", 
+       x        = TeX("Estimate of the provenance intercept P_{p}")
+       )+
+  theme_bw() + theme(axis.text = element_text(size=15),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+p
+#ggsave(p,file="../../figs/SuppInfo/M1_ProvInterceptsPost_P3.png",height=10,width=10)
+```
+
+
+
+
+
+
+# **Model M2**
+
+```{r loadM2}
+mod <- readRDS(file="../../outputs/models/P3/MOD2.rds")
+```
+
+## Main parameters
+
+### Standard deviations
+
+#### Mean
+
+```{r TableM2SDMean, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov:site__Intercept'='$\\sigma_{Inter}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+#### Median
+
+```{r TableM2SDMedian, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov:site__Intercept'='$\\sigma_{Inter}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+#### Figs
+
+```{r M2MCMCIntervals, fig.width=10,fig.height=3,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
+                    prob=prob,prob_outer = 1,point_est = "median") +  theme_bw() + 
+  
+    scale_y_discrete(labels=c("sigma"=parse(text=TeX("$\\sigma$")),
+                            'b_Intercept'=parse(text = TeX("$\\beta_{0}$")),
+                            "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
+                            "sd_site:block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_prov:clon__Intercept"=parse(text = TeX("$\\sigma_{G_{P}}$")),
+                            "sd_clon__Intercept"=parse(text = TeX("$\\sigma_{G_{P}}$")),
+                            "sd_prov__Intercept"=parse(text = TeX("$\\sigma_{P}$")),
+                            "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            'sd_prov:site__Intercept'=parse(text = TeX("$\\sigma_{Inter}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")))) +
+  theme(axis.text = element_text(size=16))
+```
+
+
+### Variances
+
+#### Mean 
+
+
+```{r TableM2VARMean, echo=F, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_prov:site__Intercept'='$\\sigma^{2}_{Inter}$',
+                              'sd_site:block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Mean"] <- mean(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+
+#### Median
+
+In the Supplementary Information.
+
+```{r TableM2VARMedian, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_prov:site__Intercept'='$\\sigma^{2}_{Inter}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_site:block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Median"] <- median(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+
+# tab <- bind_rows(df,df2)
+# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M2_MainVarPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+#### Figs
+
+In the Supplementary Information.
+
+```{r M2VARFigs,fig.height=6, fig.width=10,warning=F,message=F}
+p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_prov|sd_site:block|sigma)",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_prov:clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_prov__Intercept)"=parse(text = TeX("$\\sigma^{2}_{P}$")),
+                            "square(sd_prov:site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{Inter}$")),
+                            "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
+                            "square(sigma)"=parse(text = TeX("$\\sigma^{2}$"))
+                            )) 
+
+p2 <- mod %>%  mcmc_intervals(regex_pars = "sd_site__Intercept",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{S}$")))) 
+
+p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")),
+                            "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
+
+p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(1,0.3,0.7),nrow=3,vjust=c(1.3,0.8,1))
+#ggsave(p,file="../../figs/SuppInfo/M2_PostMainVar_P3.png",height=8) 
+p
+```
+
+
+
+## Site intercepts
+
+### Tables
+
+#### Mean
+
+```{r TableM2MeanSiteIntercepts}
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T,conf.level = 0.95) %>% 
+  filter(str_detect(term, "^(r_site\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate,"SD"=Std.error,"InfCI"=Conf.low,"SupCI"=Conf.high) %>% 
+  mutate(Parameter = recode_factor(Term,'r_site[asturias,Intercept]'="$S_{Asturias}$",
+                              'r_site[bordeaux,Intercept]'= '$S_{Bordeaux}$',
+                              'r_site[caceres,Intercept]'='$S_{Caceres}$',
+                              'r_site[madrid,Intercept]'='$S_{Madrid}$',
+                              'r_site[portugal,Intercept]'="$S_{Portugal}$")) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median 
+
+```{r TableM2MedianSiteIntercepts}
+df <- mod %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level = 0.95) %>% 
+  filter(str_detect(term, "^(r_site\\[)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Median"=Estimate,"SD"=Std.error,"InfCI"=Conf.low,"SupCI"=Conf.high) %>% 
+  mutate(Parameter = recode_factor(Term,'r_site[asturias,Intercept]'="$S_{Asturias}$",
+                              'r_site[bordeaux,Intercept]'= '$S_{Bordeaux}$',
+                              'r_site[caceres,Intercept]'='$S_{Caceres}$',
+                              'r_site[madrid,Intercept]'='$S_{Madrid}$',
+                              'r_site[portugal,Intercept]'="$S_{Portugal}$")) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+### Figs
+
+#### MCMC intervals
+
+```{r M2SiteInterceptsMCMCintervals, fig.width=8,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^r_site\\[",
+                    prob=prob,prob_outer = 1,point_est = "mean") +  theme_bw() + 
+  scale_y_discrete(labels=c('r_site[asturias,Intercept]'=parse(text = TeX("$S_{Asturias}$")),
+                              'r_site[bordeaux,Intercept]'=parse(text = TeX("$S_{Bordeaux}$")),
+                              'r_site[caceres,Intercept]'=parse(text = TeX("$S_{Caceres}$")),
+                              'r_site[madrid,Intercept]'=parse(text = TeX("$S_{Madrid}$")),
+                              'r_site[portugal,Intercept]'=parse(text = TeX("$S_{Portugal}$"))
+                            )) +
+  theme(axis.text = element_text(size=16))
+```
+
+
+
+## Provenance intercepts
+
+### ALL
+
+```{r M2AllProvs, warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_prov\\[")
+colnames(POST) <- str_sub(colnames(POST),8,-12)
+POST <- as.data.frame(t(POST))
+POST$prov <- as.factor(rownames(POST))
+
+data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- droplevels(data)
+ps <- data %>%
+  group_by(prov) %>% 
+  summarise_at(vars(paste0(rep("Q",6),1:6)), mean)
+ps$max.Q.prov <- colnames(ps[,2:7])[apply(ps[,2:7],1,which.max)]
+ps$prov <- as.factor(ps$prov)
+
+posteriorsimpelmodellong <- inner_join(POST, ps[,c("prov","max.Q.prov")],by="prov") %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -prov,-max.Q.prov)%>%
+  group_by(prov) %>%
+  dplyr::mutate(meanperprov = mean(value))%>%
+  ungroup()
+
+pm2_all <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(prov), meanperprov),
+                                    height = ..density.., 
+                                    fill   = as.factor(max.Q.prov),
+                                    vline_color = ..quantile..),
+                                scale = 3, 
+                                alpha = .6,
+                                rel_min_height=c(.01),
+                                size=0.2,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  scale_y_discrete(labels=c("ALT"=parse(text = TeX("$P_{ALT}$")),
+                            "ARM"=parse(text = TeX("$P_{ARM}$")),
+                            "ARN"=parse(text = TeX("$P_{ARN}$")),
+                            "BAY"=parse(text = TeX("$P_{BAY}$")),
+                            "BON"=parse(text = TeX("$P_{BON}$")),
+                            "CAD"=parse(text = TeX("$P_{CAD}$")),
+                            "CAR"=parse(text = TeX("$P_{CAR}$")),
+                            "CAS"=parse(text = TeX("$P_{CAS}$")),
+                            "CEN"=parse(text = TeX("$P_{CEN}$")),
+                            "COC"=parse(text = TeX("$P_{COC}$")),
+                            "COM"=parse(text = TeX("$P_{COM}$")),
+                            "CUE"=parse(text = TeX("$P_{CUE}$")),
+                            "HOU"=parse(text = TeX("$P_{HOU}$")),
+                            "LAM"=parse(text = TeX("$P_{LAM}$")),
+                            "LEI"=parse(text = TeX("$P_{LEI}$")),
+                            "MAD"=parse(text = TeX("$P_{MAD}$")),
+                            "MIM"=parse(text = TeX("$P_{MIM}$")),
+                            "OLB"=parse(text = TeX("$P_{OLB}$")),
+                            "OLO"=parse(text = TeX("$P_{OLO}$")),
+                            "ORI"=parse(text = TeX("$P_{ORI}$")),
+                            "PET"=parse(text = TeX("$P_{PET}$")),
+                            "PIA"=parse(text = TeX("$P_{PIA}$")),
+                            "PIE"=parse(text = TeX("$P_{PIE}$")),
+                            "PLE"=parse(text = TeX("$P_{PLE}$")),
+                            "PUE"=parse(text = TeX("$P_{PUE}$")),
+                            "QUA"=parse(text = TeX("$P_{QUA}$")),
+                            "SAC"=parse(text = TeX("$P_{SAC}$")),
+                            "SAL"=parse(text = TeX("$P_{SAL}$")),
+                            "SEG"=parse(text = TeX("$P_{SEG}$")),
+                            "SIE"=parse(text = TeX("$P_{SIE}$")),
+                            "STJ"=parse(text = TeX("$P_{STJ}$")),
+                            "TAM"=parse(text = TeX("$P_{TAM}$")),
+                            "VAL"=parse(text = TeX("$P_{VAL}$")),
+                            "VER"=parse(text = TeX("$P_{VER}$")))) +
+  
+   coord_cartesian(c(-0.35,0.3))+
+  
+   scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Mean"),
+                        name = NULL) +
+  scale_fill_manual(values=c("orangered3",
+                             "gold2","darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Q1: Northern Africa", 
+                                                   "Q2: Corsica",
+                                                   "Q3: Central Spain",
+                                                   "Q4: French Atlantic",
+                                                   "Q5: Iberian Atlantic",
+                                                   "Q6: South-eastern Spain"),name="Gene pools") +
+  labs(title     = "All sites",
+       y        = "", 
+       x        = TeX("Intercepts P_{p}")
+       )+
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+```
+
+
+
+### Portugal
+
+```{r M2Portugal,warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_prov:site\\[.*portugal")
+colnames(POST) <- str_sub(colnames(POST),13,-21)
+POST <- as.data.frame(t(POST))
+POST$prov <- as.factor(rownames(POST))
+
+data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- droplevels(data)
+ps <- data %>%
+  group_by(prov) %>% 
+  summarise_at(vars(paste0(rep("Q",6),1:6)), mean)
+ps$max.Q.prov <- colnames(ps[,2:7])[apply(ps[,2:7],1,which.max)]
+ps$prov <- as.factor(ps$prov)
+
+posteriorsimpelmodellong <- inner_join(POST, ps[,c("prov","max.Q.prov")],by="prov") %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -prov,-max.Q.prov)%>%
+  group_by(prov) %>%
+  dplyr::mutate(meanperprov = mean(value))%>%
+  ungroup()
+
+pm2_portugal <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(prov), meanperprov),
+                                    height = ..density.., 
+                                    fill   = as.factor(max.Q.prov),
+                                    vline_color = ..quantile..),
+                                scale = 3, 
+                                alpha = .6,
+                                rel_min_height=c(.01),
+                                size=0.2,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  
+  scale_y_discrete(labels=c("ALT"=parse(text = TeX("$P_{ALT}$")),
+                            "ARM"=parse(text = TeX("$P_{ARM}$")),
+                            "ARN"=parse(text = TeX("$P_{ARN}$")),
+                            "BAY"=parse(text = TeX("$P_{BAY}$")),
+                            "BON"=parse(text = TeX("$P_{BON}$")),
+                            "CAD"=parse(text = TeX("$P_{CAD}$")),
+                            "CAR"=parse(text = TeX("$P_{CAR}$")),
+                            "CAS"=parse(text = TeX("$P_{CAS}$")),
+                            "CEN"=parse(text = TeX("$P_{CEN}$")),
+                            "COC"=parse(text = TeX("$P_{COC}$")),
+                            "COM"=parse(text = TeX("$P_{COM}$")),
+                            "CUE"=parse(text = TeX("$P_{CUE}$")),
+                            "HOU"=parse(text = TeX("$P_{HOU}$")),
+                            "LAM"=parse(text = TeX("$P_{LAM}$")),
+                            "LEI"=parse(text = TeX("$P_{LEI}$")),
+                            "MAD"=parse(text = TeX("$P_{MAD}$")),
+                            "MIM"=parse(text = TeX("$P_{MIM}$")),
+                            "OLB"=parse(text = TeX("$P_{OLB}$")),
+                            "OLO"=parse(text = TeX("$P_{OLO}$")),
+                            "ORI"=parse(text = TeX("$P_{ORI}$")),
+                            "PET"=parse(text = TeX("$P_{PET}$")),
+                            "PIA"=parse(text = TeX("$P_{PIA}$")),
+                            "PIE"=parse(text = TeX("$P_{PIE}$")),
+                            "PLE"=parse(text = TeX("$P_{PLE}$")),
+                            "PUE"=parse(text = TeX("$P_{PUE}$")),
+                            "QUA"=parse(text = TeX("$P_{QUA}$")),
+                            "SAC"=parse(text = TeX("$P_{SAC}$")),
+                            "SAL"=parse(text = TeX("$P_{SAL}$")),
+                            "SEG"=parse(text = TeX("$P_{SEG}$")),
+                            "SIE"=parse(text = TeX("$P_{SIE}$")),
+                            "STJ"=parse(text = TeX("$P_{STJ}$")),
+                            "TAM"=parse(text = TeX("$P_{TAM}$")),
+                            "VAL"=parse(text = TeX("$P_{VAL}$")),
+                            "VER"=parse(text = TeX("$P_{VER}$")))) +
+  
+   coord_cartesian(c(-0.35,0.3))+
+  
+   scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Mean"),
+                        name = NULL) +
+  scale_fill_manual(values=c("orangered3",
+                             "gold2","darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Q1: Northern Africa", 
+                                                   "Q2: Corsica",
+                                                   "Q3: Central Spain",
+                                                   "Q4: French Atlantic",
+                                                   "Q5: Iberian Atlantic",
+                                                   "Q6: South-eastern Spain"),name="Gene pools") +
+  labs(title     = "Portugal",
+       y        = "", 
+       x        = TeX("Intercepts P_{p,Portugal}")
+       )+
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+```
+
+### Caceres
+
+
+```{r M2Caceres, warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_prov:site\\[.*caceres")
+colnames(POST) <- str_sub(colnames(POST),13,-20)
+POST <- as.data.frame(t(POST))
+POST$prov <- as.factor(rownames(POST))
+
+data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- droplevels(data)
+ps <- data %>%
+  group_by(prov) %>% 
+  summarise_at(vars(paste0(rep("Q",6),1:6)), mean)
+ps$max.Q.prov <- colnames(ps[,2:7])[apply(ps[,2:7],1,which.max)]
+ps$prov <- as.factor(ps$prov)
+
+posteriorsimpelmodellong <- inner_join(POST, ps[,c("prov","max.Q.prov")],by="prov") %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -prov,-max.Q.prov)%>%
+  group_by(prov) %>%
+  dplyr::mutate(meanperprov = mean(value))%>%
+  ungroup()
+
+pm2_caceres <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(prov), meanperprov),
+                                    height = ..density.., 
+                                    fill   = as.factor(max.Q.prov),
+                                    vline_color = ..quantile..),
+                                scale = 3, 
+                                alpha = .6,
+                                rel_min_height=c(.01),
+                                size=0.2,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  
+  scale_y_discrete(labels=c("ALT"=parse(text = TeX("$P_{ALT}$")),
+                            "ARM"=parse(text = TeX("$P_{ARM}$")),
+                            "ARN"=parse(text = TeX("$P_{ARN}$")),
+                            "BAY"=parse(text = TeX("$P_{BAY}$")),
+                            "BON"=parse(text = TeX("$P_{BON}$")),
+                            "CAD"=parse(text = TeX("$P_{CAD}$")),
+                            "CAR"=parse(text = TeX("$P_{CAR}$")),
+                            "CAS"=parse(text = TeX("$P_{CAS}$")),
+                            "CEN"=parse(text = TeX("$P_{CEN}$")),
+                            "COC"=parse(text = TeX("$P_{COC}$")),
+                            "COM"=parse(text = TeX("$P_{COM}$")),
+                            "CUE"=parse(text = TeX("$P_{CUE}$")),
+                            "HOU"=parse(text = TeX("$P_{HOU}$")),
+                            "LAM"=parse(text = TeX("$P_{LAM}$")),
+                            "LEI"=parse(text = TeX("$P_{LEI}$")),
+                            "MAD"=parse(text = TeX("$P_{MAD}$")),
+                            "MIM"=parse(text = TeX("$P_{MIM}$")),
+                            "OLB"=parse(text = TeX("$P_{OLB}$")),
+                            "OLO"=parse(text = TeX("$P_{OLO}$")),
+                            "ORI"=parse(text = TeX("$P_{ORI}$")),
+                            "PET"=parse(text = TeX("$P_{PET}$")),
+                            "PIA"=parse(text = TeX("$P_{PIA}$")),
+                            "PIE"=parse(text = TeX("$P_{PIE}$")),
+                            "PLE"=parse(text = TeX("$P_{PLE}$")),
+                            "PUE"=parse(text = TeX("$P_{PUE}$")),
+                            "QUA"=parse(text = TeX("$P_{QUA}$")),
+                            "SAC"=parse(text = TeX("$P_{SAC}$")),
+                            "SAL"=parse(text = TeX("$P_{SAL}$")),
+                            "SEG"=parse(text = TeX("$P_{SEG}$")),
+                            "SIE"=parse(text = TeX("$P_{SIE}$")),
+                            "STJ"=parse(text = TeX("$P_{STJ}$")),
+                            "TAM"=parse(text = TeX("$P_{TAM}$")),
+                            "VAL"=parse(text = TeX("$P_{VAL}$")),
+                            "VER"=parse(text = TeX("$P_{VER}$")))) +
+   coord_cartesian(c(-0.35,0.3))+
+  
+   scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Mean"),
+                        name = NULL) +
+  scale_fill_manual(values=c("orangered3",
+                             "gold2","darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Q1: Northern Africa", 
+                                                   "Q2: Corsica",
+                                                   "Q3: Central Spain",
+                                                   "Q4: French Atlantic",
+                                                   "Q5: Iberian Atlantic",
+                                                   "Q6: South-eastern Spain"),name="Gene pools") +
+  labs(title     = "Caceres",
+       y        = "", 
+       x        = TeX("Intercepts P_{p,Caceres}")
+       )+
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+```
+
+
+
+### Madrid
+
+
+```{r M2Madrid, warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_prov:site\\[.*madrid")
+colnames(POST) <- str_sub(colnames(POST),13,-19)
+POST <- as.data.frame(t(POST))
+POST$prov <- as.factor(rownames(POST))
+
+data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- droplevels(data)
+ps <- data %>%
+  group_by(prov) %>% 
+  summarise_at(vars(paste0(rep("Q",6),1:6)), mean)
+ps$max.Q.prov <- colnames(ps[,2:7])[apply(ps[,2:7],1,which.max)]
+ps$prov <- as.factor(ps$prov)
+
+posteriorsimpelmodellong <- inner_join(POST, ps[,c("prov","max.Q.prov")],by="prov") %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -prov,-max.Q.prov)%>%
+  group_by(prov) %>%
+  dplyr::mutate(meanperprov = mean(value))%>%
+  ungroup()
+
+pm2_madrid <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(prov), meanperprov),
+                                    height = ..density.., 
+                                    fill   = as.factor(max.Q.prov),
+                                    vline_color = ..quantile..),
+                                scale = 3, 
+                                alpha = .6,
+                                rel_min_height=c(.01),
+                                size=0.2,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  
+   coord_cartesian(c(-0.35,0.3))+
+  
+  scale_y_discrete(labels=c("ALT"=parse(text = TeX("$P_{ALT}$")),
+                            "ARM"=parse(text = TeX("$P_{ARM}$")),
+                            "ARN"=parse(text = TeX("$P_{ARN}$")),
+                            "BAY"=parse(text = TeX("$P_{BAY}$")),
+                            "BON"=parse(text = TeX("$P_{BON}$")),
+                            "CAD"=parse(text = TeX("$P_{CAD}$")),
+                            "CAR"=parse(text = TeX("$P_{CAR}$")),
+                            "CAS"=parse(text = TeX("$P_{CAS}$")),
+                            "CEN"=parse(text = TeX("$P_{CEN}$")),
+                            "COC"=parse(text = TeX("$P_{COC}$")),
+                            "COM"=parse(text = TeX("$P_{COM}$")),
+                            "CUE"=parse(text = TeX("$P_{CUE}$")),
+                            "HOU"=parse(text = TeX("$P_{HOU}$")),
+                            "LAM"=parse(text = TeX("$P_{LAM}$")),
+                            "LEI"=parse(text = TeX("$P_{LEI}$")),
+                            "MAD"=parse(text = TeX("$P_{MAD}$")),
+                            "MIM"=parse(text = TeX("$P_{MIM}$")),
+                            "OLB"=parse(text = TeX("$P_{OLB}$")),
+                            "OLO"=parse(text = TeX("$P_{OLO}$")),
+                            "ORI"=parse(text = TeX("$P_{ORI}$")),
+                            "PET"=parse(text = TeX("$P_{PET}$")),
+                            "PIA"=parse(text = TeX("$P_{PIA}$")),
+                            "PIE"=parse(text = TeX("$P_{PIE}$")),
+                            "PLE"=parse(text = TeX("$P_{PLE}$")),
+                            "PUE"=parse(text = TeX("$P_{PUE}$")),
+                            "QUA"=parse(text = TeX("$P_{QUA}$")),
+                            "SAC"=parse(text = TeX("$P_{SAC}$")),
+                            "SAL"=parse(text = TeX("$P_{SAL}$")),
+                            "SEG"=parse(text = TeX("$P_{SEG}$")),
+                            "SIE"=parse(text = TeX("$P_{SIE}$")),
+                            "STJ"=parse(text = TeX("$P_{STJ}$")),
+                            "TAM"=parse(text = TeX("$P_{TAM}$")),
+                            "VAL"=parse(text = TeX("$P_{VAL}$")),
+                            "VER"=parse(text = TeX("$P_{VER}$")))) +
+   scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Mean"),
+                        name = NULL) +
+  scale_fill_manual(values=c("orangered3",
+                             "gold2","darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Q1: Northern Africa", 
+                                                   "Q2: Corsica",
+                                                   "Q3: Central Spain",
+                                                   "Q4: French Atlantic",
+                                                   "Q5: Iberian Atlantic",
+                                                   "Q6: South-eastern Spain"),name="Gene pools") +
+  labs(title     = "Madrid",
+       y        = "", 
+       x        = TeX("Intercepts P_{p,Madrid}")
+       )+
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+```
+
+
+### Bordeaux
+
+
+```{r M2Bordeaux, warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_prov:site\\[.*bordeaux")
+colnames(POST) <- str_sub(colnames(POST),13,-21)
+POST <- as.data.frame(t(POST))
+POST$prov <- as.factor(rownames(POST))
+
+data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- droplevels(data)
+ps <- data %>%
+  group_by(prov) %>% 
+  summarise_at(vars(paste0(rep("Q",6),1:6)), mean)
+ps$max.Q.prov <- colnames(ps[,2:7])[apply(ps[,2:7],1,which.max)]
+ps$prov <- as.factor(ps$prov)
+
+posteriorsimpelmodellong <- inner_join(POST, ps[,c("prov","max.Q.prov")],by="prov") %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -prov,-max.Q.prov)%>%
+  group_by(prov) %>%
+  dplyr::mutate(meanperprov = mean(value))%>%
+  ungroup()
+
+pm2_bordeaux <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(prov), meanperprov),
+                                    height = ..density.., 
+                                    fill   = as.factor(max.Q.prov),
+                                    vline_color = ..quantile..),
+                                scale = 3, 
+                                alpha = .6,
+                                rel_min_height=c(.01),
+                                size=0.2,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  
+   coord_cartesian(c(-0.35,0.3))+
+  
+  scale_y_discrete(labels=c("ALT"=parse(text = TeX("$P_{ALT}$")),
+                            "ARM"=parse(text = TeX("$P_{ARM}$")),
+                            "ARN"=parse(text = TeX("$P_{ARN}$")),
+                            "BAY"=parse(text = TeX("$P_{BAY}$")),
+                            "BON"=parse(text = TeX("$P_{BON}$")),
+                            "CAD"=parse(text = TeX("$P_{CAD}$")),
+                            "CAR"=parse(text = TeX("$P_{CAR}$")),
+                            "CAS"=parse(text = TeX("$P_{CAS}$")),
+                            "CEN"=parse(text = TeX("$P_{CEN}$")),
+                            "COC"=parse(text = TeX("$P_{COC}$")),
+                            "COM"=parse(text = TeX("$P_{COM}$")),
+                            "CUE"=parse(text = TeX("$P_{CUE}$")),
+                            "HOU"=parse(text = TeX("$P_{HOU}$")),
+                            "LAM"=parse(text = TeX("$P_{LAM}$")),
+                            "LEI"=parse(text = TeX("$P_{LEI}$")),
+                            "MAD"=parse(text = TeX("$P_{MAD}$")),
+                            "MIM"=parse(text = TeX("$P_{MIM}$")),
+                            "OLB"=parse(text = TeX("$P_{OLB}$")),
+                            "OLO"=parse(text = TeX("$P_{OLO}$")),
+                            "ORI"=parse(text = TeX("$P_{ORI}$")),
+                            "PET"=parse(text = TeX("$P_{PET}$")),
+                            "PIA"=parse(text = TeX("$P_{PIA}$")),
+                            "PIE"=parse(text = TeX("$P_{PIE}$")),
+                            "PLE"=parse(text = TeX("$P_{PLE}$")),
+                            "PUE"=parse(text = TeX("$P_{PUE}$")),
+                            "QUA"=parse(text = TeX("$P_{QUA}$")),
+                            "SAC"=parse(text = TeX("$P_{SAC}$")),
+                            "SAL"=parse(text = TeX("$P_{SAL}$")),
+                            "SEG"=parse(text = TeX("$P_{SEG}$")),
+                            "SIE"=parse(text = TeX("$P_{SIE}$")),
+                            "STJ"=parse(text = TeX("$P_{STJ}$")),
+                            "TAM"=parse(text = TeX("$P_{TAM}$")),
+                            "VAL"=parse(text = TeX("$P_{VAL}$")),
+                            "VER"=parse(text = TeX("$P_{VER}$")))) +
+   scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Mean"),
+                        name = NULL) +
+  scale_fill_manual(values=c("orangered3",
+                             "gold2","darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Q1: Northern Africa", 
+                                                   "Q2: Corsica",
+                                                   "Q3: Central Spain",
+                                                   "Q4: French Atlantic",
+                                                   "Q5: Iberian Atlantic",
+                                                   "Q6: South-eastern Spain"),name="Gene pools") +
+  labs(title = "Bordeaux",
+       y        = "", 
+       x        = TeX("Intercepts P_{p,Bordeaux}")
+       )+
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+```
+
+
+### Asturias
+
+
+```{r M2Asturias, warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_prov:site\\[.*asturias")
+colnames(POST) <- str_sub(colnames(POST),13,-21)
+POST <- as.data.frame(t(POST))
+POST$prov <- as.factor(rownames(POST))
+
+data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- droplevels(data)
+ps <- data %>%
+  group_by(prov) %>% 
+  summarise_at(vars(paste0(rep("Q",6),1:6)), mean)
+ps$max.Q.prov <- colnames(ps[,2:7])[apply(ps[,2:7],1,which.max)]
+ps$prov <- as.factor(ps$prov)
+
+posteriorsimpelmodellong <- inner_join(POST, ps[,c("prov","max.Q.prov")],by="prov") %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -prov,-max.Q.prov)%>%
+  group_by(prov) %>%
+  dplyr::mutate(meanperprov = mean(value))%>%
+  ungroup()
+
+pm2_asturias <- ggplot()+
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(prov), meanperprov),
+                                    height = ..density.., 
+                                    fill   = as.factor(max.Q.prov),
+                                    vline_color = ..quantile..),
+                                scale = 3, 
+                                alpha = .6,
+                                rel_min_height=c(.01),
+                                size=0.2,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  
+   coord_cartesian(c(-0.35,0.3))+
+  
+  scale_y_discrete(labels=c("ALT"=parse(text = TeX("$P_{ALT}$")),
+                            "ARM"=parse(text = TeX("$P_{ARM}$")),
+                            "ARN"=parse(text = TeX("$P_{ARN}$")),
+                            "BAY"=parse(text = TeX("$P_{BAY}$")),
+                            "BON"=parse(text = TeX("$P_{BON}$")),
+                            "CAD"=parse(text = TeX("$P_{CAD}$")),
+                            "CAR"=parse(text = TeX("$P_{CAR}$")),
+                            "CAS"=parse(text = TeX("$P_{CAS}$")),
+                            "CEN"=parse(text = TeX("$P_{CEN}$")),
+                            "COC"=parse(text = TeX("$P_{COC}$")),
+                            "COM"=parse(text = TeX("$P_{COM}$")),
+                            "CUE"=parse(text = TeX("$P_{CUE}$")),
+                            "HOU"=parse(text = TeX("$P_{HOU}$")),
+                            "LAM"=parse(text = TeX("$P_{LAM}$")),
+                            "LEI"=parse(text = TeX("$P_{LEI}$")),
+                            "MAD"=parse(text = TeX("$P_{MAD}$")),
+                            "MIM"=parse(text = TeX("$P_{MIM}$")),
+                            "OLB"=parse(text = TeX("$P_{OLB}$")),
+                            "OLO"=parse(text = TeX("$P_{OLO}$")),
+                            "ORI"=parse(text = TeX("$P_{ORI}$")),
+                            "PET"=parse(text = TeX("$P_{PET}$")),
+                            "PIA"=parse(text = TeX("$P_{PIA}$")),
+                            "PIE"=parse(text = TeX("$P_{PIE}$")),
+                            "PLE"=parse(text = TeX("$P_{PLE}$")),
+                            "PUE"=parse(text = TeX("$P_{PUE}$")),
+                            "QUA"=parse(text = TeX("$P_{QUA}$")),
+                            "SAC"=parse(text = TeX("$P_{SAC}$")),
+                            "SAL"=parse(text = TeX("$P_{SAL}$")),
+                            "SEG"=parse(text = TeX("$P_{SEG}$")),
+                            "SIE"=parse(text = TeX("$P_{SIE}$")),
+                            "STJ"=parse(text = TeX("$P_{STJ}$")),
+                            "TAM"=parse(text = TeX("$P_{TAM}$")),
+                            "VAL"=parse(text = TeX("$P_{VAL}$")),
+                            "VER"=parse(text = TeX("$P_{VER}$")))) +
+   scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Mean"),
+                        name = NULL) +
+  scale_fill_manual(values=c("orangered3",
+                             "gold2","darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Q1: Northern Africa", 
+                                                   "Q2: Corsica",
+                                                   "Q3: Central Spain",
+                                                   "Q4: French Atlantic",
+                                                   "Q5: Iberian Atlantic",
+                                                   "Q6: South-eastern Spain"),name="Gene pools") +
+  labs(title = "Asturias",
+       y        = "", 
+       x        = TeX("Intercepts P_{p,Asturias}")
+       )+
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+```
+
+### Merging the plots
+
+In the Supplementary Information.
+
+```{r M2provIntercepts,fig.height=7,fig.width=15,warning=F,message=F}
+pp2_all <- pm2_all + theme(legend.position = "none")
+pp2_asturias <- pm2_asturias + theme(legend.position = "none")
+pp2_bordeaux <- pm2_bordeaux + theme(legend.position = "none")
+pp2_caceres <- pm2_caceres + theme(legend.position = "none")
+pp2_portugal <- pm2_portugal + theme(legend.position = "none")
+pp2_madrid <- pm2_madrid + theme(legend.position = "none")
+
+g <-  ggarrange(pp2_all,pp2_asturias,pp2_bordeaux,pp2_caceres,pp2_portugal,pp2_madrid ,
+                nrow=1)
+g
+#ggsave(g,file="../../figs/SuppInfo/M2_SiteProvIntercepts_P3.png",width=20,height=12) 
+```
+
+
+
+# **MODEL M7**
+
+```{r loadM7}
+mod <- readRDS(file="../../outputs/models/P3/MOD7.rds") 
+```
+
+
+
+## Main parameters
+
+### Standard deviations
+
+#### Mean
+
+```{r TableM7SDMean, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
+                              'sd_site__bio5_prov.sc'="$\\sigma_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma_{beta_{min.pre,s}}$",
+                              'sd_site__count_all.sc'="$\\sigma_{beta_{gpea,s}}$",
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median
+
+```{r TableM7SDMedian, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_site__bio5_prov.sc'="$\\sigma_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma_{beta_{min.pre,s}}$",
+                              'sd_site__count_all.sc'="$\\sigma_{beta_{gpea,s}}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
+                              'sd_block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+#### Figs
+
+```{r M7MCMCIntervals, fig.width=10,fig.height=3,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
+                    prob=prob,prob_outer = 1,point_est = "median") +  theme_bw() + 
+  scale_y_discrete(labels=c("sigma"=parse(text=TeX("$\\sigma$")),
+                            'b_Intercept'=parse(text = TeX("$\\beta_{0}$")),
+                            "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
+                            'sd_site__bio5_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{max.temp,s}}$")),
+                            'sd_site__bio14_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{min.pre,s}}$")),
+                            'sd_site__count_all.sc'=parse(text = TeX("$\\sigma_{\\beta_{gpea,s}}$")),
+                            "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_mmQ1Q2Q3Q4Q5Q6__Intercept"=parse(text = TeX("$\\sigma_{g_{j}}$")),
+                            "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")))) +
+  theme(axis.text = element_text(size=16))
+```
+
+
+### Variances
+
+#### Mean 
+
+
+```{r TableM7VARMean, echo=F, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigm^{2}a_{G_{P}}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
+                              'sd_site__bio5_prov.sc'="$\\sigma^{2}_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma^{2}_{beta_{min.pre,s}}$",
+                              'sd_site__count_all.sc'="$\\sigma^{2}_{beta_{gpea,s}}$",
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Mean"] <- mean(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+
+#### Median
+
+In the Supplementary Information.
+
+```{r TableM7VARMedian, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
+                              'sd_site__bio5_prov.sc'="$\\sigma^{2}_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma^{2}_{beta_{min.pre,s}}$",
+                              'sd_site__count_all.sc'="$\\sigma^{2}_{beta_{gpea,s}}$",
+                              'sd_block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Median"] <- median(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+
+# tab <- bind_rows(df,df2)
+# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M7_MainVarPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+
+
+#### Figs
+
+In the Supplementary Information.
+
+
+```{r M7VARFigs,fig.height=6, fig.width=10,warning=F,message=F}
+p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__b|sd_site__c|sd_clon|sd_prov|sd_site:block|sigma|sd_mm)",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_prov:clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_site__bio5_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{beta_{max.temp,s}}$")),
+                            "square(sd_site__bio14_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{beta_{min.pre,s}}$")),
+                            "square(sd_site__count_all.sc)"=parse(text = TeX("$\\sigma^{2}_{beta_{gpea,s}}$")),
+                            "square(sd_prov:site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{Inter}$")),
+                            "square(sd_mmQ1Q2Q3Q4Q5Q6__Intercept)"=parse(text = TeX("$\\sigma^{2}_{g_{j}}$")),
+                            "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
+                            "square(sigma)"=parse(text = TeX("$\\sigma^{2}$"))
+                            )) 
+
+p2 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__I)",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{S}$")))) 
+
+p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")),
+                            "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
+
+p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
+#ggsave(p,file="../../figs/SuppInfo/M7_PostMainVar_P3.png",height=8) 
+p
+```
+
+
+
+## Gene pool intercepts
+
+### Table
+
+```{r TableM7GenePoolIntercepts}
+# gp <- str_c(rep("Q",6),1:6)
+# par <-paste(paste0("'r_mmQ1Q2Q3Q4Q5Q6[",gp,",Intercept]'")) 
+# par2 <-paste(paste0("'$g_{",1:6,"}$'")) 
+# tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^(r_mm)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 'r_mmQ1Q2Q3Q4Q5Q6[Q1,Intercept]' = '$g_{NA}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q2,Intercept]' = '$g_{C}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q3,Intercept]' = '$g_{CS}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q4,Intercept]' = '$g_{FA}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q5,Intercept]' = '$g_{IA}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q6,Intercept]' = '$g_{SES}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs 
+
+
+#### MCMC intervals
+
+```{r FigsM7GenePoolIntercepts,fig.height=3,warning=F,message=F}
+gp <- str_c(rep("Q",6),1:6)
+par <-paste(paste0("'r_mmQ1Q2Q3Q4Q5Q6[",gp,",Intercept]'")) 
+par2 <-paste(paste0("'g_Q",1:6,"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_mmQ1Q2Q3Q4Q5Q6",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+
+  labs(title = "Posterior interval estimates from MCMC draws") +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_mmQ1Q2Q3Q4Q5Q6[Q1,Intercept]' = parse(text = TeX("$\\g_{NA}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q2,Intercept]' = parse(text = TeX("$\\g_{C}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q3,Intercept]' = parse(text = TeX("$\\g_{CS}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q4,Intercept]' = parse(text = TeX("$\\g_{FA}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q5,Intercept]' = parse(text = TeX("$\\g_{IA}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q6,Intercept]' = parse(text = TeX("$\\g_{SES}$"))))
+```
+
+#### Density ridges
+
+```{r M7PostGenePoolIntercepts, fig.width=10,warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_mmQ1Q2Q3Q4Q5Q6\\[")
+colnames(POST) <- str_sub(colnames(POST),18,-12)
+POST <- as.data.frame(t(POST))
+POST$genepool <- as.factor(rownames(POST))
+
+posteriorsimpelmodellong <- POST %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -genepool)%>%
+  group_by(genepool) %>%
+  dplyr::mutate(meanpergenepool = mean(value))%>%
+  ungroup()
+
+pM4_GP <- ggplot()+
+  geom_vline(xintercept = 0, 
+             col        = "grey70") +
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(genepool), meanpergenepool),
+                                    # height = ..density.., 
+                                    fill   = as.factor(genepool),
+                                    vline_color = ..quantile..),
+                                scale = 2, 
+                                alpha = .6,
+                                rel_min_height=c(.001),
+                                size=0.5,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+        scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Median"),
+                        name = NULL) +
+  coord_cartesian(c(-0.5,0.4))+
+  scale_fill_manual(values=c("orangered3",
+                             "gold2",
+                             "darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Northern Africa", 
+                                                   "Corsica",
+                                                   "Central Spain",
+                                                   "French Atlantic",
+                                                   "Iberian Atlantic",
+                                                   "South-eastern Spain")) +
+  
+  
+  scale_y_discrete(labels=c("Q1"=parse(text = TeX("$g_{NA}$")),
+                            "Q2"=parse(text = TeX("$g_{C}$")),
+                            "Q3"=parse(text = TeX("$g_{CS}$")),
+                            "Q4"=parse(text = TeX("$g_{FA}$")),
+                            "Q5"=parse(text = TeX("$g_{IA}$")),
+                            "Q6"=parse(text = TeX("$g_{SES}$")))) + 
+  labs(fill     = "Gene pools",
+       y        = "", 
+       x        = TeX("Gene pool intercept g_{j}")
+       ) + 
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+pM4_GP
+```
+
+
+
+
+## Maximum temperature of the warmest month
+
+### Table
+
+```{r M7BetaMaxTempTable, warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio5_prov.sc]'")) 
+par2 <-paste(paste0("'$\\beta_{max.temp,",site,"}$'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^r_site.*bio5_prov.sc\\]")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 
+                              'r_site[portugal,bio5_prov.sc]' = '$\\beta_{max.temp,Portugal}$',
+                              'r_site[bordeaux,bio5_prov.sc]' = '$\\beta_{max.temp,Bordeaux}$',
+                              'r_site[asturias,bio5_prov.sc]' = '$\\beta_{max.temp,Asturias}$',
+                              'r_site[madrid,bio5_prov.sc]' = '$\\beta_{max.temp,Madrid}$',
+                              'r_site[caceres,bio5_prov.sc]' = '$\\beta_{max.temp,Caceres}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs
+
+```{r M7BetaMaxTempFigs,fig.width=8,fig.height=3,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio5_prov.sc]'")) 
+par2 <-paste(paste0("'beta_MaxTemp_",str_to_title(site),"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*bio5_prov.sc\\]",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_site[portugal,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Portugal}$")),
+                            'r_site[bordeaux,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Bordeaux}$")),
+                            'r_site[asturias,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Asturias}$")),
+                            'r_site[madrid,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Madrid}$")),
+                            'r_site[caceres,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Caceres}$"))))
+```
+
+
+## Minimum precipitation of the driest month
+
+### Table
+
+```{r M7BetaMinPreTable, fig.height=5,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio14_prov.sc]'")) 
+par2 <-paste(paste0("'$\\beta_{min.pre,",site,"}$'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^r_site.*bio14_prov.sc\\]")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 'r_site[portugal,bio14_prov.sc]' = '$\\beta_{min.pre,Portugal}$',
+                              'r_site[bordeaux,bio14_prov.sc]' = '$\\beta_{min.pre,Bordeaux}$',
+                              'r_site[asturias,bio14_prov.sc]' = '$\\beta_{min.pre,Asturias}$',
+                              'r_site[madrid,bio14_prov.sc]' = '$\\beta_{min.pre,Madrid}$',
+                              'r_site[caceres,bio14_prov.sc]' = '$\\beta_{min.pre,Caceres}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs
+
+```{r M7BetaMInPreFigs,fig.width=8,fig.height=3,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio14_prov.sc]'")) 
+par2 <-paste(paste0("'beta_MinPre_",str_to_title(site),"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*bio14_prov.sc\\]",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_site[portugal,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Portugal}$")),
+                            'r_site[bordeaux,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Bordeaux}$")),
+                            'r_site[asturias,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Asturias}$")),
+                            'r_site[madrid,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Madrid}$")),
+                            'r_site[caceres,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Caceres}$"))))
+```
+
+## gPEAs
+
+> = global Positive effect alleles
+
+### Table
+
+```{r M7BetagPEATable, warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",count_all.sc]'")) 
+par2 <-paste(paste0("'$\\beta_{gPEA,",site,"}$'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^r_site.*all.sc\\]")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 'r_site[portugal,count_all.sc]' = '$\\beta_{gpea,Portugal}$',
+                              'r_site[bordeaux,count_all.sc]' = '$\\beta_{gpea,Bordeaux}$',
+                              'r_site[asturias,count_all.sc]' = '$\\beta_{gpea,Asturias}$',
+                              'r_site[madrid,count_all.sc]' = '$\\beta_{gpea,Madrid}$',
+                              'r_site[caceres,count_all.sc]' = '$\\beta_{gpea,Caceres}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs
+
+```{r M7BetagPEAeFigs,fig.width=8,fig.height=3,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",count_all.sc]'")) 
+par2 <-paste(paste0("'beta_gPEA_",str_to_title(site),"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*all.sc\\]",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_site[portugal,count_all.sc]' = parse(text = TeX("$\\beta_{gpea,Portugal}$")),
+                            'r_site[bordeaux,count_all.sc]' = parse(text = TeX("$\\beta_{gpea,Bordeaux}$")),
+                            'r_site[asturias,count_all.sc]' = parse(text = TeX("$\\beta_{gpea,Asturias}$")),
+                            'r_site[madrid,count_all.sc]' = parse(text = TeX("$\\beta_{gpea,Madrid}$")),
+                            'r_site[caceres,count_all.sc]' = parse(text = TeX("$\\beta_{gpea,Caceres}$")))) 
+```
+
+
+# **MODEL M8**
+
+```{r loadM8}
+mod <- readRDS(file="../../outputs/models/P3/MOD8.rds")
+```
+
+
+## Main parameters
+
+### Standard deviations
+
+#### Mean
+
+```{r TableM8SDMean, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
+                              'sd_site__bio5_prov.sc'="$\\sigma_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma_{beta_{min.pre,s}}$",
+                              'sd_site__count_all_350.sc'="$\\sigma_{beta_{rpea,s}}$",
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+#### Median
+
+```{r TableM8SDMedian, echo=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b|sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)
+}
+
+df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'sigma'='$\\sigma$',
+                              'b_Intercept'='$\\beta_{0}$',
+                              'sd_prov__Intercept'="$\\sigma_{P}$",
+                              'sd_site__bio5_prov.sc'="$\\sigma_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma_{beta_{min.pre,s}}$",
+                              'sd_site__count_all_350.sc'="$\\sigma_{beta_{rpea,s}}$",
+                              'sd_prov:clon__Intercept'='$\\sigma_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma_{S}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
+                              'sd_block__Intercept'='$\\sigma_{B_{S}}$')) %>% 
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI) %>%
+  remove_rownames() %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+#### Figs
+
+
+```{r M8MCMCIntervals, fig.width=10,fig.height=3,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
+                    prob=prob,prob_outer = 1,point_est = "median") +  theme_bw() + 
+  scale_y_discrete(labels=c("sigma"=parse(text=TeX("$\\sigma$")),
+                            'b_Intercept'=parse(text = TeX("$\\beta_{0}$")),
+                            "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
+                            'sd_site__bio5_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{max.temp,s}}$")),
+                            'sd_site__bio14_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{min.pre,s}}$")),
+                            'sd_site__count_all_350.sc'=parse(text = TeX("$\\sigma_{\\beta_{rpea,s}}$")),
+                            "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B_{S}}$")),
+                            "sd_mmQ1Q2Q3Q4Q5Q6__Intercept"=parse(text = TeX("$\\sigma_{g_{j}}$")),
+                            "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")))) +
+  theme(axis.text = element_text(size=16))
+```
+
+
+### Variances
+
+#### Mean 
+
+
+```{r TableM8VARMean, echo=F, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Mean"] <- mean(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigm^{2}a_{G_{P}}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
+                              'sd_site__bio5_prov.sc'="$\\sigma^{2}_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma^{2}_{beta_{min.pre,s}}$",
+                              'sd_site__count_all_350.sc'="$\\sigma^{2}_{beta_{rpea,s}}$",
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Mean","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Mean"] <- mean(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Mean,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+```
+
+
+
+#### Median
+
+In the Supplementary Information.
+
+```{r TableM8VARMedian, message=F, warning=F}
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(sd|sigma)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- square(sims[, , i])
+  quan <- unname(quantile(sims_i, probs = probs))
+  df[i,"InfCI"] <- quan[1]
+  df[i,"SupCI"] <- quan[2]
+  df[i,"Median"] <- median(sims_i)
+  df[i,"SD"] <- sd(sims_i)}
+
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
+                              'sd_prov__Intercept'="$\\sigma^{2}_{P}$",
+                              'sd_prov:clon__Intercept'='$\\sigma^{2}_{G_{P}}$',
+                              'sd_site__Intercept'='$\\sigma^{2}_{S}$',
+                              'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
+                              'sd_site__bio5_prov.sc'="$\\sigma^{2}_{beta_{max.temp,s}}$",
+                              'sd_site__bio14_prov.sc'="$\\sigma^{2}_{beta_{min.pre,s}}$",
+                              'sd_site__count_all_350.sc'="$\\sigma^{2}_{beta_{rpea,s}}$",
+                              'sd_block__Intercept'='$\\sigma^{2}_{B_{S}}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+pars <- mod %>% get_variables() %>%  as.vector() %>% str_subset("^(b)")
+sims <- as.array(mod, pars = pars, fixed = TRUE)
+
+df2 <- as.data.frame(matrix(NA,length(pars),4,dimnames = list(pars,c("Median","SD","InfCI","SupCI"))))
+for(i in pars){
+  sims_i <- sims[, , i]
+  quan <- unname(quantile(sims_i, probs = probs))
+  df2[i,"InfCI"] <- quan[1]
+  df2[i,"SupCI"] <- quan[2]
+  df2[i,"Median"] <- median(sims_i)
+  df2[i,"SD"] <- sd(sims_i)}
+df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\beta_{age}$",
+                              'b_Iage.scE2'= '$\\beta_{age2}$',
+                              'b_Intercept'='$\\beta_{0}$')) %>% 
+  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+bind_rows(df,df2) %>% 
+  knitr::kable(digits = 3 ,format = "markdown")
+
+# tab <- bind_rows(df,df2)
+# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M8_MainVarPost_P3.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+
+
+
+#### Figs
+
+In the Supplementary Information.
+
+
+```{r M8VARFigs,fig.height=6, fig.width=10,warning=F,message=F}
+p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__b|sd_site__c|sd_clon|sd_prov|sd_site:block|sigma|sd_mm)",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_prov:clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
+                            "square(sd_site__bio5_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{beta_{max.temp,s}}$")),
+                            "square(sd_site__bio14_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{beta_{min.pre,s}}$")),
+                            "square(sd_site__count_all_350.sc)"=parse(text = TeX("$\\sigma^{2}_{beta_{rpea,s}}$")),
+                            "square(sd_prov:site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{Inter}$")),
+                            "square(sd_mmQ1Q2Q3Q4Q5Q6__Intercept)"=parse(text = TeX("$\\sigma^{2}_{g_{j}}$")),
+                            "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
+                            "square(sigma)"=parse(text = TeX("$\\sigma^{2}$"))
+                            )) 
+
+p2 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__I)",transformations="square",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("square(sd_site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{S}$")))) 
+
+p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
+                     prob=0.95,prob_outer = 1,point_est = "median") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c("b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
+                            "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")),
+                            "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
+
+p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
+#ggsave(p,file="../../figs/SuppInfo/M8_PostMainVar_P3.png",height=8)  
+p
+```
+
+
+
+## Gene pool intercepts
+
+### Table
+
+```{r TableM8GenePoolIntercepts}
+# gp <- str_c(rep("Q",6),1:6)
+# par <-paste(paste0("'r_mmQ1Q2Q3Q4Q5Q6[",gp,",Intercept]'")) 
+# par2 <-paste(paste0("'$g_{",1:6,"}$'")) 
+# tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^(r_mm)")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 'r_mmQ1Q2Q3Q4Q5Q6[Q1,Intercept]' = '$g_{NA}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q2,Intercept]' = '$g_{C}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q3,Intercept]' = '$g_{CS}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q4,Intercept]' = '$g_{FA}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q5,Intercept]' = '$g_{IA}$',
+                                    'r_mmQ1Q2Q3Q4Q5Q6[Q6,Intercept]' = '$g_{SES}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs 
+
+
+#### MCMC intervals
+
+```{r FigsM8GenePoolIntercepts,fig.height=3,warning=F,message=F}
+gp <- str_c(rep("Q",6),1:6)
+par <-paste(paste0("'r_mmQ1Q2Q3Q4Q5Q6[",gp,",Intercept]'")) 
+par2 <-paste(paste0("'g_Q",1:6,"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_mmQ1Q2Q3Q4Q5Q6",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+
+  labs(title = "Posterior interval estimates from MCMC draws") +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_mmQ1Q2Q3Q4Q5Q6[Q1,Intercept]' = parse(text = TeX("$\\g_{NA}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q2,Intercept]' = parse(text = TeX("$\\g_{C}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q3,Intercept]' = parse(text = TeX("$\\g_{CS}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q4,Intercept]' = parse(text = TeX("$\\g_{FA}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q5,Intercept]' = parse(text = TeX("$\\g_{IA}$")),
+                            'r_mmQ1Q2Q3Q4Q5Q6[Q6,Intercept]' = parse(text = TeX("$\\g_{SES}$"))))
+```
+
+#### Density ridges
+
+```{r M8PostGenePoolIntercepts, fig.width=10,warning=F,message=F}
+POST <- posterior_samples(mod,pars = "^r_mmQ1Q2Q3Q4Q5Q6\\[")
+colnames(POST) <- str_sub(colnames(POST),18,-12)
+POST <- as.data.frame(t(POST))
+POST$genepool <- as.factor(rownames(POST))
+
+posteriorsimpelmodellong <- POST %>%  as_tibble() %>% 
+gather(key = "key", value = "value", -genepool)%>%
+  group_by(genepool) %>%
+  dplyr::mutate(meanpergenepool = mean(value))%>%
+  ungroup()
+
+pM4_GP <- ggplot()+
+  geom_vline(xintercept = 0, 
+             col        = "grey70") +
+  stat_density_ridges(data  = posteriorsimpelmodellong, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(genepool), meanpergenepool),
+                                    fill   = as.factor(genepool),
+                                    vline_color = ..quantile..),
+                                scale = 2, 
+                                alpha = .6,
+                                rel_min_height=c(.001),
+                                size=0.5,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+        scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("2.5 and 97.5th percentiles", "Median"),
+                        name = NULL) +
+  coord_cartesian(c(-0.5,0.4))+
+  scale_fill_manual(values=c("orangered3",
+                             "gold2",
+                             "darkorchid3",
+                             "navyblue",
+                             "turquoise2",
+                             "green3"), labels = c("Northern Africa", 
+                                                   "Corsica",
+                                                   "Central Spain",
+                                                   "French Atlantic",
+                                                   "Iberian Atlantic",
+                                                   "South-eastern Spain")) +
+  
+  
+  scale_y_discrete(labels=c("Q1"=parse(text = TeX("$g_{NA}$")),
+                            "Q2"=parse(text = TeX("$g_{C}$")),
+                            "Q3"=parse(text = TeX("$g_{CS}$")),
+                            "Q4"=parse(text = TeX("$g_{FA}$")),
+                            "Q5"=parse(text = TeX("$g_{IA}$")),
+                            "Q6"=parse(text = TeX("$g_{SES}$")))) + 
+  labs(y        = "", 
+       x        = TeX("Gene pool intercept g_{j}")) + 
+  theme_bw() + theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
+                        legend.text = element_text(size=18),legend.title = element_text(size=20))
+pM4_GP
+```
+
+
+
+
+## Maximum temperature of the warmest month
+
+### Table
+
+```{r M8BetaMaxTempTable, warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio5_prov.sc]'")) 
+par2 <-paste(paste0("'$\\beta_{max.temp,",site,"}$'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^r_site.*bio5_prov.sc\\]")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 
+                              'r_site[portugal,bio5_prov.sc]' = '$\\beta_{max.temp,Portugal}$',
+                              'r_site[bordeaux,bio5_prov.sc]' = '$\\beta_{max.temp,Bordeaux}$',
+                              'r_site[asturias,bio5_prov.sc]' = '$\\beta_{max.temp,Asturias}$',
+                              'r_site[madrid,bio5_prov.sc]' = '$\\beta_{max.temp,Madrid}$',
+                              'r_site[caceres,bio5_prov.sc]' = '$\\beta_{max.temp,Caceres}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs
+
+```{r M8BetaMaxTempFigs,fig.width=8,fig.height=3,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio5_prov.sc]'")) 
+par2 <-paste(paste0("'beta_MaxTemp_",str_to_title(site),"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*bio5_prov.sc\\]",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_site[portugal,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Portugal}$")),
+                            'r_site[bordeaux,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Bordeaux}$")),
+                            'r_site[asturias,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Asturias}$")),
+                            'r_site[madrid,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Madrid}$")),
+                            'r_site[caceres,bio5_prov.sc]' = parse(text = TeX("$\\beta_{max.temp,Caceres}$"))))
+```
+
+
+## Minimum precipitation of the driest month
+
+### Table
+
+```{r M8BetaMinPreTable, fig.height=5,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio14_prov.sc]'")) 
+par2 <-paste(paste0("'$\\beta_{min.pre,",site,"}$'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^r_site.*bio14_prov.sc\\]")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 'r_site[portugal,bio14_prov.sc]' = '$\\beta_{min.pre,Portugal}$',
+                              'r_site[bordeaux,bio14_prov.sc]' = '$\\beta_{min.pre,Bordeaux}$',
+                              'r_site[asturias,bio14_prov.sc]' = '$\\beta_{min.pre,Asturias}$',
+                              'r_site[madrid,bio14_prov.sc]' = '$\\beta_{min.pre,Madrid}$',
+                              'r_site[caceres,bio14_prov.sc]' = '$\\beta_{min.pre,Caceres}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs
+
+```{r M8BetaMInPreFigs,fig.width=8,fig.height=3,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",bio14_prov.sc]'")) 
+par2 <-paste(paste0("'beta_MinPre_",str_to_title(site),"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*bio14_prov.sc\\]",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_site[portugal,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Portugal}$")),
+                            'r_site[bordeaux,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Bordeaux}$")),
+                            'r_site[asturias,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Asturias}$")),
+                            'r_site[madrid,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Madrid}$")),
+                            'r_site[caceres,bio14_prov.sc]' = parse(text = TeX("$\\beta_{min.pre,Caceres}$"))))
+```
+
+## rPEAs
+
+### Table
+
+```{r M8BetarPEATable, warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",count_all_350.sc]'")) 
+par2 <-paste(paste0("'$\\beta_{rpea,",site,"}$'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
+  filter(str_detect(term, "^r_site.*350.sc\\]")) %>% 
+  rename_all(str_to_title) %>% 
+  dplyr::rename("Mean"=Estimate) %>% 
+  mutate(Term = recode_factor(Term, 
+                              'r_site[portugal,count_all_350.sc]' = '$\\beta_{rpea,Portugal}$',
+                              'r_site[bordeaux,count_all_350.sc]' = '$\\beta_{rpea,Bordeaux}$',
+                              'r_site[asturias,count_all_350.sc]' = '$\\beta_{rpea,Asturias}$',
+                              'r_site[madrid,count_all_350.sc]' = '$\\beta_{rpea,Madrid}$',
+                              'r_site[caceres,count_all_350.sc]' = '$\\beta_{rpea,Caceres}$'))
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+```
+
+### Figs
+
+```{r M8BetarPEAeFigs,fig.width=8,fig.height=3,warning=F,message=F}
+site <- unique(data$site)
+par <-paste(paste0("'r_site[",site,",count_all_350.sc]'")) 
+par2 <-paste(paste0("'beta_rPEA_",str_to_title(site),"'")) 
+tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
+
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*350.sc\\]",
+                     prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_site[portugal,count_all_350.sc]' = parse(text = TeX("$\\beta_{rpea,Portugal}$")),
+                            'r_site[bordeaux,count_all_350.sc]' = parse(text = TeX("$\\beta_{rpea,Bordeaux}$")),
+                            'r_site[asturias,count_all_350.sc]' = parse(text = TeX("$\\beta_{rpea,Asturias}$")),
+                            'r_site[madrid,count_all_350.sc]' = parse(text = TeX("$\\beta_{rpea,Madrid}$")),
+                            'r_site[caceres,count_all_350.sc]' = parse(text = TeX("$\\beta_{rpea,Caceres}$")))) 
+```
+
