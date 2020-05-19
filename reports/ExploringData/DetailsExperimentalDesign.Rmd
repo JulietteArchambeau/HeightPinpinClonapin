@@ -1,0 +1,351 @@
+---
+title: "Details on the experimental design"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    # code_fold: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{r setup, include=FALSE}
+options(width = 300)
+library(knitr)
+library(xtable)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(stringr)
+knitr::opts_chunk$set(cache=F)
+```
+
+
+
+# Number of observations in the entire dataset and in each partition
+
+> In all sites
+
+```{r NbobsAllDataset, warning=F,message=F}
+data <- readRDS(file="../../data/AllDataPhenoClimSoil.RDS")
+
+# removing missing structure data
+data <- data[!(is.na(data$Q1)),]
+
+# removing missing height data
+data <- data[!(is.na(data$height)),]
+
+tab <- as.data.frame(table(data$site))
+colnames(tab) <-c("Level","All") 
+tab$Level <- str_to_title(tab$Level)
+
+data$site_age <- paste0(data$site, " - ", data$age, " months old")
+data$site_age <- str_to_sentence(data$site_age)
+tab_add <- as.data.frame(table(data$site_age))
+colnames(tab_add) <-c("Level","All") 
+
+tab <- bind_rows(tab,tab_add)
+
+tab <- bind_rows(data.frame(Level="All sites",All=dim(data)[[1]] ), tab)
+```
+
+> In the P1 partition 
+
+```{r NbobsP1, warning=F,message=F}
+data <- readRDS(file="../../data/TrainP1.RDS")
+
+tab_add <- as.data.frame(table(data$site))
+colnames(tab_add) <-c("Level","Train1") 
+tab_add$Level <- str_to_title(tab_add$Level)
+
+data$site_age <- paste0(data$site, " - ", data$age, " months old")
+data$site_age <- str_to_sentence(data$site_age)
+tab_add_2 <- as.data.frame(table(data$site_age))
+colnames(tab_add_2) <-c("Level","Train1") 
+
+tab_add <- bind_rows(tab_add,tab_add_2)
+
+tab_add <- bind_rows(data.frame(Level="All sites",Train1=dim(data)[[1]] ), tab_add)
+tab <- left_join(tab,tab_add)
+tab$Train1  <- tab$Train1 %>% replace_na(0)
+
+
+data <- readRDS(file="../../data/TestP1.RDS")
+
+tab_add <- as.data.frame(table(data$site))
+colnames(tab_add) <-c("Level","Test1") 
+tab_add$Level <- str_to_title(tab_add$Level)
+
+data$site_age <- paste0(data$site, " - ", data$age, " months old")
+data$site_age <- str_to_sentence(data$site_age)
+tab_add_2 <- as.data.frame(table(data$site_age))
+colnames(tab_add_2) <-c("Level","Test1") 
+
+tab_add <- bind_rows(tab_add,tab_add_2)
+
+tab_add <- bind_rows(data.frame(Level="All sites",Test1=dim(data)[[1]] ), tab_add)
+tab <- left_join(tab,tab_add)
+tab$Test1  <- tab$Test1 %>% replace_na(0)
+```
+
+
+> In the P2 partition 
+
+
+```{r Nbobsp2, warning=F,message=F}
+data <- readRDS(file="../../data/TrainP2.RDS")
+
+tab_add <- as.data.frame(table(data$site))
+colnames(tab_add) <-c("Level","Train2") 
+tab_add$Level <- str_to_title(tab_add$Level)
+
+data$site_age <- paste0(data$site, " - ", data$age, " months old")
+data$site_age <- str_to_sentence(data$site_age)
+tab_add_2 <- as.data.frame(table(data$site_age))
+colnames(tab_add_2) <-c("Level","Train2") 
+
+tab_add <- bind_rows(tab_add,tab_add_2)
+
+tab_add <- bind_rows(data.frame(Level="All sites",Train2=dim(data)[[1]] ), tab_add)
+tab <- left_join(tab,tab_add)
+tab$Train2  <- tab$Train2 %>% replace_na(0)
+
+
+data <- readRDS(file="../../data/TestP2.RDS")
+
+tab_add <- as.data.frame(table(data$site))
+colnames(tab_add) <-c("Level","Test2") 
+tab_add$Level <- str_to_title(tab_add$Level)
+
+data$site_age <- paste0(data$site, " - ", data$age, " months old")
+data$site_age <- str_to_sentence(data$site_age)
+tab_add_2 <- as.data.frame(table(data$site_age))
+colnames(tab_add_2) <-c("Level","Test2") 
+
+tab_add <- bind_rows(tab_add,tab_add_2)
+
+tab_add <- bind_rows(data.frame(Level="All sites",Test2=dim(data)[[1]] ), tab_add)
+tab <- left_join(tab,tab_add)
+tab$Test2  <- tab$Test2 %>% replace_na(0)
+```
+
+> In the P3 partition 
+
+
+```{r Nbobsp3, warning=F,message=F}
+data <- readRDS(file="../../data/TrainP3.RDS")
+
+tab_add <- as.data.frame(table(data$site))
+colnames(tab_add) <-c("Level","Train3") 
+tab_add$Level <- str_to_title(tab_add$Level)
+
+data$site_age <- paste0(data$site, " - ", data$age, " months old")
+data$site_age <- str_to_sentence(data$site_age)
+tab_add_3 <- as.data.frame(table(data$site_age))
+colnames(tab_add_3) <-c("Level","Train3") 
+
+tab_add <- bind_rows(tab_add,tab_add_3)
+
+tab_add <- bind_rows(data.frame(Level="All sites",Train3=dim(data)[[1]] ), tab_add)
+tab <- left_join(tab,tab_add)
+tab$Train3  <- tab$Train3 %>% replace_na(0)
+
+
+data <- readRDS(file="../../data/TestP3.RDS")
+
+tab_add <- as.data.frame(table(data$site))
+colnames(tab_add) <-c("Level","Test3") 
+tab_add$Level <- str_to_title(tab_add$Level)
+
+data$site_age <- paste0(data$site, " - ", data$age, " months old")
+data$site_age <- str_to_sentence(data$site_age)
+tab_add_3 <- as.data.frame(table(data$site_age))
+colnames(tab_add_3) <-c("Level","Test3") 
+
+tab_add <- bind_rows(tab_add,tab_add_3)
+
+tab_add <- bind_rows(data.frame(Level="All sites",Test3=dim(data)[[1]] ), tab_add)
+tab <- left_join(tab,tab_add)
+tab$Test3  <- tab$Test3 %>% replace_na(0)
+```
+
+
+```{r NbobsJoin, warning=F,message=F}
+row.names(tab) <- tab$Level
+tab$Level <- NULL
+tab <- round(tab,0)
+print(xtable(tab, type = "latex",digits=0), file = "../../tables/ExperimentalDesign/ExpDesignNbObs.tex")
+kable(tab)
+```
+
+
+
+
+# What proportion of trees died in Caceres and Madrid?
+
+```{r ProportionDeadTreesMadridCaceres}
+data <- readRDS(file="../../data/AllDataPhenoClimSoil.RDS")
+table(data$site)
+
+# removing missing height data
+sub <- data[!(is.na(data$height)),]
+table(sub$site)
+100-344*100/4272 #  91.9 % of trees died in Caceres
+100-1067*100/4272 #  75.0 % of the trees died in Madrid
+
+# removing missing structure data
+sub<- data[!(is.na(data$Q1)),]
+sub <- sub[!(is.na(sub$height)),]
+table(sub$site)
+100-340*100/4272 #  92.0 % of trees died in Caceres
+100-1046*100/4272 #  75.5 % of trees died in Madrid 
+```
+
+
+
+# How many items in each level?
+
+```{r NbInEachLevel}
+data <- readRDS(file="../../data/AllDataPhenoClimSoil.RDS")
+
+# removing missing structure data
+data <- data[!(is.na(data$Q1)),]
+
+# removing missing height data
+data <- data[!(is.na(data$height)),]
+
+# Number of observations (= measurements)
+length((data$tree))
+
+# Number of trees
+length(unique(data$tree))
+
+# Number of genotypes
+length(unique(data$clon))
+
+# Number of provenances
+length(unique(data$prov))
+```
+
+```{r LevelsPerProv,message=F,warning=F}
+dfclon <- data %>%  dplyr::select(prov,clon) %>% distinct() %>% group_by(prov) %>% dplyr::count()
+colnames(dfclon) <- c("Provenances","Number of clones")
+dftree <- data %>%  dplyr::select(prov,tree) %>% distinct() %>% group_by(prov) %>% dplyr::count()
+colnames(dftree) <- c("Provenances","Number of trees")
+
+dfobs <- data %>%  group_by(prov) %>% tally()
+colnames(dfobs) <- c("Provenances","Number of observations")
+
+df <- inner_join(dfclon,dftree)
+df <- inner_join(df,dfobs)
+kable(df)
+
+print(xtable(df, type = "latex",digits=0), file = "../../tables/ExperimentalDesign/ExpDesignProvenances.tex", include.rownames=FALSE)
+```
+
+
+
+# Proportion of belonging to each gene pool for each provenance
+
+
+Matches:
+
+- Northern africa gene pool => NA => Q1
+
+- Corsican gene pool => C => Q2
+
+- Central Spain gene pool => CS => Q3
+
+- French Atlantic gene pool => FA => Q4
+
+- Iberian Atlantic gene pool => IA => Q5
+
+- South-eastern Spain gene pool => SES => Q6
+
+
+
+```{r ProportionBelongingGenePools}
+data <- readRDS(file="../../data/AllDataPhenoClimSoil.RDS")
+
+# removing missing structure data
+data <- data[!(is.na(data$Q1)),]
+
+# removing missing height data
+data <- data[!(is.na(data$height)),]
+
+data <- droplevels(data)
+ps <- data %>%
+  group_by(prov) %>% 
+  summarise_at(vars(paste0(rep("Q",6),1:6)), mean)  # %>% mutate_at(2:7,funs(round(., 3))) 
+
+colnames(ps) <- c("Provenance","NA","C","CS","FA","IA","SES")
+
+print(xtable(ps, type = "latex",digits=3), file = "../../tables/ExperimentalDesign/PopStructureByProv.tex", include.rownames=FALSE)
+
+kable(ps)
+```
+
+
+
+# Percentage of unique trees
+
+```{r PercentageUniqueTrees}
+data <- readRDS(file="../../data/AllDataPhenoClimSoil.RDS")
+
+# removing missing structure data
+data <- data[!(is.na(data$Q1)),]
+
+# removing missing height data
+data <- data[!(is.na(data$height)),]
+
+length(unique(data$tree)) # There are 12,841 trees.
+
+# Duplicates
+dup <- data[duplicated(data$tree),]
+length(unique(dup$tree)) # There are 11,002 trees with more than one measurements.
+tree.dup <- unique(dup$tree)
+
+uni <- data[!(data$tree %in% tree.dup),]
+length(unique(uni$tree)) # There are 1,839 trees with one measurement. 
+
+table(uni$site) # Most of these trees are in Madrid. 
+
+1839*100/12841 # About 14% of the trees have only one measurement.
+```
+
+
+`r knitr::opts_chunk$set(eval = F)`
+

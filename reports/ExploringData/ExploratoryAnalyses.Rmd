@@ -1,0 +1,221 @@
+---
+title: "Exploratory analyses"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    # code_fold: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{r setup, include=FALSE}
+options(width = 300)
+library(knitr)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggbiplot)
+library(stringr)
+library(ggcorrplot)
+library(ggpubr)
+knitr::opts_chunk$set(cache=F,echo=F)
+```
+
+
+```{r LoadFunctions}
+source("../../../scripts/10_functions/vir_lite.R")
+ds=0.7
+```
+
+
+```{r LoadData}
+data <- readRDS(file = "../../data/AllDataPhenoClimSoil.RDS")
+
+# removing missing structure data
+data <- data[!(is.na(data$Q1)),]
+
+# removing missing height data
+data <- data[!(is.na(data$height)),]
+```
+
+# Correlations between variables
+
+
+## In the provenances
+
+```{r  SelectDataProv, warning=F,message=F}
+# d.prov <- data %>% 
+#   dplyr::select(starts_with("Q"),ends_with("prov"),-prov,-ends_with("sub_prov")) %>% 
+#   drop_na() %>% 
+#   distinct()%>% 
+#   scale() 
+
+d.prov.selected <- data %>% 
+  dplyr::select(starts_with("Q"),bio1_prov,bio5_prov,bio12_prov,bio14_prov) %>% 
+  drop_na() %>% 
+  distinct() %>% 
+  scale() %>% 
+  as_tibble() %>% 
+  rename_at(vars(ends_with("_prov")), funs(str_sub(., 1, -6))) %>% 
+  dplyr::rename("max.temp"=bio5,"mean.temp"=bio1,"mean.pre"=bio12,"min.pre"=bio14,
+                "Northern Africa"=Q1, "Corsica"=Q2, "Central-Spain"=Q3, "French Atlantic"=Q4, "Iberian Atlantic"=Q5, "South-eastern Spain"=Q6)
+```
+
+### Correlation plot
+
+```{r  CorrelogramProv, fig.height=8}
+corr <- cor(d.prov.selected)
+
+p <- ggcorrplot(corr, hc.order = TRUE, type = "lower",
+     outline.col = "white",lab=T,
+     legend.title = "Correlation\ncoefficients",
+     tl.cex = 16) + 
+  theme(legend.text = element_text(size=15),
+        legend.title = element_text(size=15),
+        legend.position = c(0.2,0.8))
+p
+ggsave(p,file="../../figs/SuppInfo/ExploringData/CorrplotProv.png",height=10,width=12)
+```
+
+### PCA
+
+```{r PcasProv, fig.height=8,fig.width=8}
+pca.prov.selected <- prcomp(d.prov.selected)
+
+p <- ggbiplot(pca.prov.selected,varname.size =5,alpha = 0.3,labels.size = 10,
+         varname.adjust = 1.5) +  ylim(-2.5, 1.6) +    xlim(-2.3, 2) + 
+  theme_bw() +
+  theme(plot.title = element_text(size=18),
+        axis.title = element_text(size=18),
+        axis.text = element_text(size=12))
+p
+ggsave(p,file="../../figs/SuppInfo/ExploringData/PcaProv.png",height=10,width=12)
+```
+
+
+## In the test sites
+
+```{r SelectDataSite, message=F}
+# d.site <- data %>% 
+#   dplyr::select(ends_with("1y_site"),ends_with("summer_min_site"),-tmx_min_1y_site,
+#                 -tmn_max_1y_site,-pre_min_1y_site,age) %>%
+#   drop_na() %>% 
+#   distinct()%>% 
+#   scale()
+
+d.site <- data %>% 
+  dplyr::select("age",
+                "pre_summer_min_site",
+                "pre_mean_1y_site",
+                "tmn_min_1y_site",
+                "tmx_max_1y_site",
+                "pre_max_1y_site",
+                "tmx_mean_1y_site") %>%
+  drop_na() %>% 
+  distinct()%>% 
+  scale() %>% 
+  as_tibble() %>% 
+  rename_at(vars(ends_with("1y_site")), funs(str_sub(., 1, -9))) %>% 
+  rename_at(vars(ends_with("_site")), funs(str_sub(., 1, -6))) %>% 
+  dplyr::rename(mean.tmax=tmx_mean, 
+         max.tmax=tmx_max, 
+         min.presummer=pre_summer_min,
+         min.tmn=tmn_min,
+         mean.pre=pre_mean,
+         max.pre=pre_max)
+```
+
+### Correlation plot
+
+```{r CorrSite, fig.height=8}
+cor <- cor(d.site)
+
+p <- ggcorrplot(cor, 
+                hc.order = TRUE, 
+                type = "lower",
+     outline.col = "white",
+     lab=T,
+     legend.title = "Correlation\ncoefficients",
+     tl.cex = 16
+     ) + 
+  theme(legend.text = element_text(size=15),
+        legend.title = element_text(size=15),
+        legend.position = c(0.2,0.8))
+p
+ggsave(p,file="../../figs/SuppInfo/ExploringData/CorrplotSite.png",height=10,width=12)
+```
+
+### PCA
+
+```{r PcasSite, fig.height=9, fig.width=8}
+pca.site <- prcomp(d.site)
+
+p <- ggbiplot(pca.site,varname.size =5,labels.size = 10,
+         varname.adjust = 1.5) +   ylim(-2, 2) +    xlim(-3, 3) + 
+  theme_bw() + geom_point(size=3,alpha = 0.5) +
+  theme(plot.title = element_text(size=18),
+        axis.title = element_text(size=18),
+        axis.text = element_text(size=12))
+p
+ggsave(p,file="../../figs/SuppInfo/ExploringData/PcaSite.png",height=10,width=12)
+```
+
+
+# Distribution of heights in Caceres and Madrid
+
+> No strong footprints of selection on height variations in Caceres and Madrid
+
+
+```{r DistributionHeightMadridCaceres,message=F, fig.width=10}
+p <- ggarrange(
+data %>% dplyr::filter(site=="caceres") %>% 
+  ggplot() + geom_histogram(aes(x=height),color="grey80", fill=vir_lite("pink",ds=ds),bins=50) + theme_bw() +
+  labs(x="Height (mm)",y="Count"),
+
+data %>% dplyr::filter(site=="madrid") %>% 
+  ggplot() + geom_histogram(aes(x=height),color="grey80", fill=vir_lite("deeppink",ds=ds),bins=50) + theme_bw() +
+  labs(x="Height (mm)",y=""),
+
+nrow=1,labels=c("A) Caceres","B) Madrid"),font.label = list(size=20))
+
+p
+ggsave(p, file="../../figs/SuppInfo/ExploringData/DistributionHeightCaceresMadrid.png",width=14)
+```
+
+                             
+`r knitr::opts_chunk$set(eval = F)`
+
