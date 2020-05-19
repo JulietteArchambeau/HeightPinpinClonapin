@@ -1,0 +1,719 @@
+---
+title: "Calculating gPEAs and rPEAs"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    # code_fold: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+bibliography: references.bib 
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{r setup, include=FALSE}
+options(width = 300)
+library(knitr)
+library(readr)
+library(dplyr)
+library(rethinking)
+library(compare)
+knitr::opts_chunk$set(cache=F)
+```
+
+In this script, we create a data frame with the number of positive alleles each gentoype has. @miguelPolygenicAdaptationNegative2020 showed that about 350 SNPs were associated with height in maritime pine. Knowing that, we selected gPEAs and rPEAs in two ways:
+
+  - We selected all SNPs with an absolute posterior effect size larger than .006. This leads to the selection of about 350 SNPs.
+  
+  - We selected the first 350 SNPs with the largest absolute posterior effect size. This is the method that was adopted for the manuscript. 
+  
+For selected SNPs with a negative effect on height, we inverted the alleles, so that we only considered alleles with a positive effect on height when calcultating the counts. 
+
+
+```{r  LoadFiles}
+# File with the genotype names (clone names)
+geno_names <- read.delim2("../../data/ClonapinBlups523IndPiMASSJuly2019.txt", row.names=1)
+
+# File with the genotype of each clone for each SNP
+geno <- read.csv("../../data/5165snps523genotypesNA.txt", header=FALSE, row.names=1)
+str(geno[,1:20])
+dim(geno) # SNPs in rows, genotypes in columns
+
+# In this file, SNPs have their names, but not the genotypes.
+head(geno[,1:10])
+
+# Removing the first two columns with allele info (A,T, G or C)
+geno <- geno[,3:dim(geno)[[2]]]
+
+# Give the genotype name for each column of geno
+colnames(geno) <- rownames(geno_names)
+
+rm(geno_names)
+
+head(geno[,1:10])
+dim(geno)
+```
+
+There are 523 genotypes and 5,165 SNPs.
+
+**Looking for NAs**
+
+```{r NAgeno}
+# Total number of NAs
+sum(is.na(geno))
+
+# Nas per rows (Number of NAs per SNPs)
+na_row <- rowSums(is.na(geno))
+range(na_row)
+mean(na_row)
+
+# NAs per columns (Number of NAs per genotypes)
+na_col <- colSums(is.na(geno))
+range(na_col)
+mean(na_col)
+```
+
+
+
+# Calculating the global PEAs
+
+## Visualizing piMASS outupts
+
+```{r LoadPimassOutputsAllSites, message=F}
+beta.snp <- read_delim("../../data/piMASSoutputs/height_all_sites_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+beta.snp <- as.data.frame(beta.snp)
+row.names(beta.snp) <- beta.snp$rs
+beta.snp$rs <- NULL
+head(beta.snp)
+
+# Checking that the genotypes names in the two files are the same,
+# and are ranked similarly.
+compare::compare(row.names(beta.snp),row.names(geno))
+```
+
+
+```{r VisualizePimassOutputsAllSites, fig.height=8,fig.width=10,echo=F}
+par(mfrow=c(2,2))
+hist(beta.snp$postc,100L,main="Estimates of the posterior inclusion\nprobabilities based on simple counting")
+hist(beta.snp$postrb,100L,main="Estimates of the posterior inclusion\nprobabilities based on Rao-Blackwellization")
+hist(beta.snp$beta,100L,main="Naive estimates of the\nposterior effect size")
+hist(beta.snp$betarb,100L,main="Rao-Blackwellized estimates\nof the posterior effect size")
+```
+
+> Posterior inclusion probabilities
+
+```{r VisualizingPimassOutputsHighpostrbAllSites01, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$postrb[beta.snp$postrb>0.1],100L,main="Estimates of the posterior inclusion probabilities\nbased on Rao-Blackwellization\nwith only the SNPs with postrb>0.1")
+```
+
+Below are the estimates of the posterior inclusion probabilities based on Rao-Blackwellization with the four SNPs with **postrb>0.4**.
+
+```{r VisualizingPimassOutputsHighpostrbAllSites04}
+beta.snp[abs(beta.snp$postrb)>0.4|abs(beta.snp$postrb)==0.4,]
+```
+
+> Posterior effect sizes
+
+```{r VisualizingPimassOutputsHighbetarbAllSites01, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$betarb[abs(beta.snp$betarb)>0.01],100L,main="Rao-Blackwellized estimates\nof the posterior effect size\nwith only the SNPs with betarb>0.01")
+```
+
+Below are the Rao-Blackwellized estimates the posterior effect size with the three SNPs with **betarb>0.05**.
+
+```{r VisualizingPimassOutputsHighbetarbAllSites04}
+beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
+```
+
+
+## Selecting gPEAs (with betarb>0.006)
+
+```{r SNPHeightAssociatedAllSites}
+# SNPs associated with height (with posterior effect size higher than 0.006)
+snps.h <- beta.snp[abs(beta.snp$betarb)>0.006|abs(beta.snp$betarb)==0.006,]
+length(snps.h$chr)
+
+# Among the selected SNPs, SNPs positively associated with height:
+snps.h.pos <- row.names(snps.h[snps.h$betarb>0,])
+length(snps.h.pos)
+
+# Among the selected SNPs, SNPs negatively associated with height:
+snps.h.neg <- row.names(snps.h[snps.h$betarb<0,])
+length(snps.h.neg)
+```
+
+```{r CountPositiveSNPsAllSites,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos <- geno[row.names(geno) %in% snps.h.pos,]
+geno.snp.h.pos[1:5,1:5]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg <- geno[row.names(geno) %in% snps.h.neg,]
+geno.snp.h.neg[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg)
+geno.snp.h.neg <- geno.snp.h.neg %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg) <- snpnames 
+geno.snp.h.neg[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h <-rbind(geno.snp.h.pos,geno.snp.h.neg)
+geno.snp.h[1:5,1:5]
+
+DF <- data.frame(clon=names(geno.snp.h),count_all_006=apply(geno.snp.h,2,sum,na.rm=T))
+
+var(DF$count_all_006)
+range(DF$count_all_006)
+mean(DF$count_all_006)
+rethinking::dens(DF$count_all_006)
+```
+
+
+## Selecting rPEAs (first 350 SNPs)
+
+```{r SnpHeightAssociated350AllSites}
+# Snps associated with height
+beta.snp.order <- beta.snp[order(abs(beta.snp$betarb),decreasing=T),]
+beta.snp.order350 <- beta.snp.order[1:350,]
+length(beta.snp.order350$beta)
+
+# Snps positively associated with height
+snps.h.pos.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb>0,])
+length(snps.h.pos.350)
+
+# Snps negatively associated with height
+snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
+length(snps.h.neg.350)
+```
+
+```{r CountPositive350snpsAllSites,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos.350 <- geno[row.names(geno) %in% snps.h.pos.350,]
+geno.snp.h.pos.350[1:5,1:5]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg.350 <- geno[row.names(geno) %in% snps.h.neg.350,]
+geno.snp.h.neg.350[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg.350)
+geno.snp.h.neg.350 <- geno.snp.h.neg.350 %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg.350) <- snpnames 
+geno.snp.h.neg.350[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h.350 <-rbind(geno.snp.h.pos.350,geno.snp.h.neg.350)
+names.all <- rownames(geno.snp.h.350)
+
+df <- data.frame(clon=names(geno.snp.h.350),count_all_350=apply(geno.snp.h.350,2,sum,na.rm=T))
+
+var(df$count_all_350)
+range(df$count_all_350)
+mean(df$count_all_350)
+rethinking::dens(df$count_all_350)
+
+DF <- merge(DF,df,by="clon")
+head(DF)
+```
+
+
+# In the French Atlantic region
+
+## Visualizing piMASS outupts
+
+```{r LoadPimassOutputsFrenchAtlantic, message=F}
+beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_french_atlantic_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+beta.snp <- as.data.frame(beta.snp)
+row.names(beta.snp) <- beta.snp$rs
+beta.snp$rs <- NULL
+head(beta.snp)
+```
+
+```{r VisualizingPimassOutputsFrenchAtlantic, fig.height=8,fig.width=10,echo=F}
+par(mfrow=c(2,2))
+hist(beta.snp$postc,100L,main="Estimates of the posterior inclusion\nprobabilities based on simple counting")
+hist(beta.snp$postrb,100L,main="Estimates of the posterior inclusion\nprobabilities based on Rao-Blackwellization")
+hist(beta.snp$beta,100L,main="Naive estimates of the\nposterior effect size")
+hist(beta.snp$betarb,100L,main="Rao-Blackwellized estimates\nof the posterior effect size")
+```
+
+
+> Posterior inclusion probabilities
+
+```{r VisualizePimasOutputsHighpostrbFrenchAtlantic01, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$postrb[beta.snp$postrb>0.1],100L,main="Estimates of the posterior inclusion probabilities\nbased on Rao-Blackwellization\nwith only the SNPs with postrb>0.1")
+```
+
+Below are the estimates of the posterior inclusion probabilities based on Rao-Blackwellization with the three SNPs with **postrb>0.4**.
+
+
+```{r VisualizePimasOutputsHighpostrbFrenchAtlantic04}
+beta.snp[abs(beta.snp$postrb)>0.4|abs(beta.snp$postrb)==0.4,]
+```
+
+> Posterior effect sizes
+
+```{r VisualizePimassOutputsHighbetarbFrenchAtlantic001, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$betarb[abs(beta.snp$betarb)>0.01],100L,main="Rao-Blackwellized estimates\nof the posterior effect size\nwith only the SNPs with betarb>0.01")
+```
+
+Below are the Rao-Blackwellized estimates the posterior effect size with the two SNPs with **betarb>0.05**.
+
+```{r VisualizePimassOutputsHighbetarbFrenchAtlantic005}
+beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
+```
+
+
+
+## Selecting rPEAs (betarb>0.006)
+
+
+```{r SnpHeightAssociatedFrenchAtlantic}
+# Snps associated with height
+snps.h <- beta.snp[abs(beta.snp$betarb)>0.006|abs(beta.snp$betarb)==0.006,]
+length(snps.h$chr)
+
+# Snps positively associated with height
+snps.h.pos <- row.names(snps.h[snps.h$betarb>0,])
+length(snps.h.pos)
+
+# Snps negatively associated with height
+snps.h.neg <- row.names(snps.h[snps.h$betarb<0,])
+length(snps.h.neg)
+```
+
+```{r CountPositiveSnpsFrenchAtlantic,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos <- geno[row.names(geno) %in% snps.h.pos,]
+geno.snp.h.pos[1:5,1:5]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg <- geno[row.names(geno) %in% snps.h.neg,]
+geno.snp.h.neg[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg)
+geno.snp.h.neg <- geno.snp.h.neg %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg) <- snpnames 
+geno.snp.h.neg[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h <-rbind(geno.snp.h.pos,geno.snp.h.neg)
+
+df <- data.frame(clon=names(geno.snp.h),count_fratl_006=apply(geno.snp.h,2,sum,na.rm=T))
+
+var(df$count_fratl_006)
+range(df$count_fratl_006)
+mean(df$count_fratl_006)
+rethinking::dens(df$count_fratl_006)
+
+DF <- merge(DF,df,by="clon")
+head(DF)
+```
+
+
+## Selecting rPEAs (first 350 SNPs)
+
+```{r SnpHeightAssociated350FrenchAtlantic}
+# Snps associated with height
+beta.snp.order <- beta.snp[order(abs(beta.snp$betarb),decreasing=T),]
+beta.snp.order350 <- beta.snp.order[1:350,]
+length(beta.snp.order350$beta)
+
+# Snps positively associated with height
+snps.h.pos.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb>0,])
+length(snps.h.pos.350)
+
+# Snps negatively associated with height
+snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
+length(snps.h.neg.350)
+```
+
+```{r CountPositive350snpsFrenchAtlantic,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos.350 <- geno[row.names(geno) %in% snps.h.pos.350,]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg.350 <- geno[row.names(geno) %in% snps.h.neg.350,]
+geno.snp.h.neg.350[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg.350)
+geno.snp.h.neg.350 <- geno.snp.h.neg.350 %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg.350) <- snpnames 
+geno.snp.h.neg.350[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h.350 <-rbind(geno.snp.h.pos.350,geno.snp.h.neg.350)
+names.fr_atl <- rownames(geno.snp.h.350)
+
+df <- data.frame(clon=names(geno.snp.h.350),count_fratl_350=apply(geno.snp.h.350,2,sum,na.rm=T))
+
+var(df$count_fratl_350)
+range(df$count_fratl_350)
+mean(df$count_fratl_350)
+rethinking::dens(df$count_fratl_350)
+
+DF <- merge(DF,df,by="clon")
+head(DF)
+```
+
+
+
+# In the Iberian Atlantic region
+
+## Visualizing piMASS outupts
+
+```{r LoadPimassOutputsIberianAtlantic, message=F}
+beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_iberian_atlantic_res.mcmc.txt", "\t", 
+                       escape_double = FALSE, trim_ws = TRUE)
+beta.snp <- as.data.frame(beta.snp)
+row.names(beta.snp) <- beta.snp$rs
+beta.snp$rs <- NULL
+head(beta.snp)
+```
+
+```{r VisualizingPimassOutputsIberianAtlantic, fig.height=8,fig.width=10,echo=F}
+par(mfrow=c(2,2))
+hist(beta.snp$postc,100L,main="Estimates of the posterior inclusion\nprobabilities based on simple counting")
+hist(beta.snp$postrb,100L,main="Estimates of the posterior inclusion\nprobabilities based on Rao-Blackwellization")
+hist(beta.snp$beta,100L,main="Naive estimates of the\nposterior effect size")
+hist(beta.snp$betarb,100L,main="Rao-Blackwellized estimates\nof the posterior effect size")
+```
+
+> Posterior inclusion probabilities
+
+```{r VisualizePimasOutputsHighpostrbIberianAtlantic01, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$postrb[beta.snp$postrb>0.1],100L,main="Estimates of the posterior inclusion probabilities\nbased on Rao-Blackwellization\nwith only the SNPs with postrb>0.1")
+```
+
+Below are the estimates of the posterior inclusion probabilities based on Rao-Blackwellization with the three SNPs with **postrb>0.4**.
+
+
+```{r VisualizePimasOutputsHighpostrbIberianAtlantic04}
+beta.snp[abs(beta.snp$postrb)>0.4|abs(beta.snp$postrb)==0.4,]
+```
+
+> Posterior effect sizes
+
+```{r VisualizePimassOutputsHighbetarbIberianAtlantic001, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$betarb[abs(beta.snp$betarb)>0.01],100L,main="Rao-Blackwellized estimates\nof the posterior effect size\nwith only the SNPs with betarb>0.01")
+```
+
+Below are the Rao-Blackwellized estimates the posterior effect size with the two SNPs with **betarb>0.05**.
+
+```{r VisualizePimassOutputsHighbetarbIberianAtlantic005}
+beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
+```
+
+
+
+
+## Selecting rPEAS (betarb>0.006)
+
+```{r SnpHeightAssociatedIberianAtlantic}
+# Snps associated with height
+snps.h <- beta.snp[abs(beta.snp$betarb)>0.006|abs(beta.snp$betarb)==0.006,]
+length(snps.h$chr)
+
+# Snps positively associated with height
+snps.h.pos <- row.names(snps.h[snps.h$betarb>0,])
+length(snps.h.pos)
+
+# Snps negatively associated with height
+snps.h.neg <- row.names(snps.h[snps.h$betarb<0,])
+length(snps.h.neg)
+```
+
+```{r CountPositiveSnpsIberianAtlantic,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos <- geno[row.names(geno) %in% snps.h.pos,]
+geno.snp.h.pos[1:5,1:5]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg <- geno[row.names(geno) %in% snps.h.neg,]
+geno.snp.h.neg[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg)
+geno.snp.h.neg <- geno.snp.h.neg %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg) <- snpnames 
+geno.snp.h.neg[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h <-rbind(geno.snp.h.pos,geno.snp.h.neg)
+
+df <- data.frame(clon=names(geno.snp.h),count_ibatl_006=apply(geno.snp.h,2,sum,na.rm=T))
+
+var(df$count_ibatl_006)
+range(df$count_ibatl_006)
+mean(df$count_ibatl_006)
+rethinking::dens(df$count_ibatl_006)
+
+DF <- merge(DF,df,by="clon")
+head(DF)
+```
+
+
+
+## Selecting rPEAs (first 350 SNPs)
+
+
+```{r SnpHeightAssociated350IberianAtlantic}
+# Snps associated with height
+beta.snp.order <- beta.snp[order(abs(beta.snp$betarb),decreasing=T),]
+beta.snp.order350 <- beta.snp.order[1:350,]
+length(beta.snp.order350$beta)
+
+# Snps positively associated with height
+snps.h.pos.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb>0,])
+length(snps.h.pos.350)
+
+# Snps negatively associated with height
+snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
+length(snps.h.neg.350)
+```
+
+```{r CountPositive350snpsIberianAtlantic,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos.350 <- geno[row.names(geno) %in% snps.h.pos.350,]
+geno.snp.h.pos.350[1:5,1:5]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg.350 <- geno[row.names(geno) %in% snps.h.neg.350,]
+geno.snp.h.neg.350[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg.350)
+geno.snp.h.neg.350 <- geno.snp.h.neg.350 %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg.350) <- snpnames 
+geno.snp.h.neg.350[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h.350 <-rbind(geno.snp.h.pos.350,geno.snp.h.neg.350)
+names.ib_atl <- rownames(geno.snp.h.350)
+
+df <- data.frame(clon=names(geno.snp.h.350),count_ibatl_350=apply(geno.snp.h.350,2,sum,na.rm=T))
+
+var(df$count_ibatl_350)
+range(df$count_ibatl_350)
+mean(df$count_ibatl_350)
+rethinking::dens(df$count_ibatl_350)
+
+DF <- merge(DF,df,by="clon")
+head(DF)
+```
+
+
+
+# In the Mediterranean region
+
+## Visualizing piMASS outupts
+
+```{r LoadPimassOutputsMed, message=F}
+beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_mediterranean_res.mcmc.txt", "\t", 
+                       escape_double = FALSE, trim_ws = TRUE)
+beta.snp <- as.data.frame(beta.snp)
+row.names(beta.snp) <- beta.snp$rs
+beta.snp$rs <- NULL
+head(beta.snp)
+```
+
+```{r VisualizingPimassOutputsMed, fig.height=8,fig.width=10,echo=F}
+par(mfrow=c(2,2))
+hist(beta.snp$postc,100L,main="Estimates of the posterior inclusion\nprobabilities based on simple counting")
+hist(beta.snp$postrb,100L,main="Estimates of the posterior inclusion\nprobabilities based on Rao-Blackwellization")
+hist(beta.snp$beta,100L,main="Naive estimates of the\nposterior effect size")
+hist(beta.snp$betarb,100L,main="Rao-Blackwellized estimates\nof the posterior effect size")
+```
+
+> Posterior inclusion probabilities
+
+```{r VisualizePimasOutputsHighpostrbMedAtlantic01, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$postrb[beta.snp$postrb>0.1],100L,
+     main="Estimates of the posterior inclusion probabilities\nbased on Rao-Blackwellization\nwith only the SNPs with postrb>0.1")
+```
+
+Below are the estimates of the posterior inclusion probabilities based on Rao-Blackwellization with the three SNPs with **postrb>0.4**.
+
+```{r VisualizePimasOutputsHighpostrbMedAtlantic04}
+beta.snp[abs(beta.snp$postrb)>0.4|abs(beta.snp$postrb)==0.4,]
+```
+
+> Posterior effect sizes
+
+```{r VisualizePimassOutputsHighbetarbMedAtlantic001, fig.height=4,fig.width=6,echo=F}
+hist(beta.snp$betarb[abs(beta.snp$betarb)>0.01],100L,
+     main="Rao-Blackwellized estimates\nof the posterior effect size\nwith only the SNPs with betarb>0.01")
+```
+
+Below are the Rao-Blackwellized estimates the posterior effect size with the two SNPs with **betarb>0.05**.
+
+```{r VisualizePimassOutputsHighbetarbMedAtlantic005}
+beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
+```
+
+
+
+## Selecting rPEAS (betarb>0.006)
+
+
+```{r SnpHeightAssociatedMed}
+# Snps associated with height
+snps.h <- beta.snp[abs(beta.snp$betarb)>0.006|abs(beta.snp$betarb)==0.006,]
+length(snps.h$chr)
+
+# Snps positively associated with height
+snps.h.pos <- row.names(snps.h[snps.h$betarb>0,])
+length(snps.h.pos)
+
+# Snps negatively associated with height
+snps.h.neg <- row.names(snps.h[snps.h$betarb<0,])
+length(snps.h.neg)
+```
+
+```{r CountPositiveSnpsMed,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos <- geno[row.names(geno) %in% snps.h.pos,]
+geno.snp.h.pos[1:5,1:5]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg <- geno[row.names(geno) %in% snps.h.neg,]
+geno.snp.h.neg[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg)
+geno.snp.h.neg <- geno.snp.h.neg %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg) <- snpnames 
+geno.snp.h.neg[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h <-rbind(geno.snp.h.pos,geno.snp.h.neg)
+
+df <- data.frame(clon=names(geno.snp.h),count_med_006=apply(geno.snp.h,2,sum,na.rm=T))
+
+var(df$count_med_006)
+range(df$count_med_006)
+mean(df$count_med_006)
+rethinking::dens(df$count_med_006)
+
+DF <- merge(DF,df,by="clon")
+head(DF)
+```
+
+
+
+## Selecting rPEAs (first 350 SNPs)
+
+```{r SnpHeightAssociated350Med}
+# Snps associated with height
+beta.snp.order <- beta.snp[order(abs(beta.snp$betarb),decreasing=T),]
+beta.snp.order350 <- beta.snp.order[1:350,]
+length(beta.snp.order350$beta)
+
+# Snps positively associated with height
+snps.h.pos.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb>0,])
+length(snps.h.pos.350)
+
+# Snps negatively associated with height
+snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
+length(snps.h.neg.350)
+```
+
+```{r CountPositive350snpsMed,fig.height=3,fig.width=3}
+# Subset of alleles with positive effect on height
+geno.snp.h.pos.350 <- geno[row.names(geno) %in% snps.h.pos.350,]
+geno.snp.h.pos.350[1:5,1:5]
+
+# Subset of alleles with negative effect on height
+geno.snp.h.neg.350 <- geno[row.names(geno) %in% snps.h.neg.350,]
+geno.snp.h.neg.350[1:5,1:5]
+
+# Inverting 0 and 2 in the subset of alleles with negative effects, 
+# to only have alleles with a positive effect
+snpnames <- row.names(geno.snp.h.neg.350)
+geno.snp.h.neg.350 <- geno.snp.h.neg.350 %>%  mutate_if(is.integer, as.numeric) %>% mutate_all(list(~recode(., `0` = 2,`2`=0)))
+row.names(geno.snp.h.neg.350) <- snpnames 
+geno.snp.h.neg.350[1:5,1:5]
+
+# combining positive and negative alleles
+geno.snp.h.350 <-rbind(geno.snp.h.pos.350,geno.snp.h.neg.350)
+names.med <- rownames(geno.snp.h.350)
+
+df <- data.frame(clon=names(geno.snp.h.350),count_med_350=apply(geno.snp.h.350,2,sum,na.rm=T))
+
+var(df$count_med_350)
+range(df$count_med_350)
+mean(df$count_med_350)
+rethinking::dens(df$count_med_350)
+
+DF <- merge(DF,df,by="clon")
+DF
+dim(DF)
+sum(is.na(DF))
+```
+
+# Save all
+
+```{r SaveDF}
+saveRDS(DF,file="../../data/CountPEAs.RDS")
+```
+
+# Overlap between the 350 SNPs selected in each region
+
+
+```{r overlapsrPEAs}
+length(setdiff(names.fr_atl,names.ib_atl))
+length(setdiff(names.fr_atl,names.med))
+length(setdiff(names.ib_atl,names.med))
+```
+
+
+
+# References
+
+
+`r knitr::opts_chunk$set(eval = F)`
+
+
+
+
