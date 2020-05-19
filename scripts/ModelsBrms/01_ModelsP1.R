@@ -76,15 +76,16 @@ data <- merge(data,snp.counts,by="clon")
 rm(snp.counts)
 
 # Region-specific PEAs
-data$count_all_350 <- NA 
-data$count_all_350[data$site=="asturias"|data$site=="portugal"] <- data$count_ibatl_350[data$site=="asturias"|data$site=="portugal"]
-data$count_all_350[data$site=="caceres"|data$site=="madrid"] <- data$count_med_350[data$site=="madrid"|data$site=="caceres"]
-data$count_all_350[data$site=="bordeaux"] <- data$count_fratl_350[data$site=="bordeaux"]
-data$count_all_350.sc <- scale(data$count_all_350)
+data$rPEA <- NA 
+data$rPEA[data$site=="asturias"|data$site=="portugal"] <- data$count_ibatl_350[data$site=="asturias"|data$site=="portugal"]
+data$rPEA[data$site=="caceres"|data$site=="madrid"] <- data$count_med_350[data$site=="madrid"|data$site=="caceres"]
+data$rPEA[data$site=="bordeaux"] <- data$count_fratl_350[data$site=="bordeaux"]
+data$rPEA.sc <- scale(data$rPEA)
 
 
 # Global PEAs
-data$count_all.sc <- scale(data$count_all)
+data$gPEA <- data$count_all_350
+data$gPEA.sc <- scale(data$gPEA)
 names(data)
 
 
@@ -247,7 +248,7 @@ saveRDS(mod6, file="outputs/models/P1/MOD6.rds")
 
 mod7 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
                (1|mm(Q1,Q2,Q3,Q4,Q5,Q6, weights = cbind(prop_Q1,prop_Q2,prop_Q3,prop_Q4,prop_Q5,prop_Q6))) +
-               (bio5_prov.sc + bio14_prov.sc + count_all.sc|site) + (1|block), 
+               (bio5_prov.sc + bio14_prov.sc + gPEA.sc|site) + (1|block), 
              
              prior = c(prior(normal(0, 1), "b"),
                        prior(normal(0, 5), "Intercept")),
@@ -271,7 +272,7 @@ saveRDS(mod7, file="outputs/models/P1/MOD7.rds")
 
 mod8 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
                (1|mm(Q1,Q2,Q3,Q4,Q5,Q6, weights = cbind(prop_Q1,prop_Q2,prop_Q3,prop_Q4,prop_Q5,prop_Q6))) +
-               (bio5_prov.sc + bio14_prov.sc + count_all_350.sc|site) + (1|block), 
+               (bio5_prov.sc + bio14_prov.sc + rPEA.sc|site) + (1|block), 
              
              prior = c(prior(normal(0, 1), "b"),
                        prior(normal(0, 5), "Intercept")),
@@ -342,7 +343,7 @@ saveRDS(mod10, file="outputs/models/P1/MOD10.rds")
 #          MODEL 11                                                                                                             ####
 
 mod11 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
-               (count_all.sc|site) + (1|block), 
+               (gPEA.sc|site) + (1|block), 
              
              prior = c(prior(normal(0, 1), "b"),
                        prior(normal(0, 5), "Intercept")),
@@ -364,7 +365,7 @@ saveRDS(mod11, file="outputs/models/P1/MOD11.rds")
 #          MODEL 12                                                                                                             ####
 
 mod12 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
-               (count_all_350.sc|site) + (1|block), 
+               (rPEA.sc|site) + (1|block), 
              
              prior = c(prior(normal(0, 1), "b"),
                        prior(normal(0, 5), "Intercept")),
