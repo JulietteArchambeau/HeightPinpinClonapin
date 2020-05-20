@@ -1,0 +1,638 @@
+---
+title: "Climatic similarity matrices"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    # code_fold: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+bibliography: references.bib 
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{r setup, include=FALSE}
+options(width = 300)
+library(knitr)
+library(readr)
+library(cowplot)
+library(ggplot2)
+library(dplyr)
+library(gplots)
+library(usdm)
+library(devtools)
+library(ggbiplot)
+library(arm)
+library(Matrix)
+library(matrixcalc)
+library(compare)
+library(RColorBrewer)
+library(MASS)
+knitr::opts_chunk$set(fig.width = 12,cache=FALSE)
+options(width = 150)
+```
+
+<!-- Functions used -->
+
+```{r FuntionsUsed,echo=F}
+source("../../scripts/Functions/corpmat.R")
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+```
+
+# Climatic similarity between test sites (P1)
+
+## Load and clean data
+
+
+```{r LoadDataSites}
+data <- readRDS(file="../../data/TrainP1.RDS")
+```
+
+Let's create a column to identify unique site + year of measurement (= different age of the trees).
+
+```{r CreateColumnSiteAgeSites}
+data$site_age <- paste0(data$site,data$age)
+```
+
+> Keeping the columns of interest
+
+- Some variables have no biological interest, we can remove them: `tmx_min_1y_site` and `tmn_max_1y_site`
+
+- Minimum precipitation in Portugal are equal to 1.2mm for three measurments. But it corresponds to precipitation in winter (in March if I well remembered). And trees are in dormancy in winter, and are not affected (or at least less) by the lack of water. So better to use other variable like `pre_summer_min_site` which corresponds to the precipitation during the previous summer. 
+
+```{r KeepColumnOfInterestSites}
+data <- data[,c("site_age",grep("y_site",colnames(data),value=T),grep("summer_min",colnames(data),value=T))]
+
+# Removing of variables with no biologcial interest
+data[,c("tmx_min_1y_site","tmn_max_1y_site")] <- NULL
+
+# Very weak precipitation in Portugal in winter. Let's remove this variable.
+table(data$pre_min_1y_site,data$site_age)
+data[,c("pre_min_1y_site")] <- NULL
+```
+
+Keep only unique values:
+
+```{r UniqueValuesSites}
+data <- unique(data)
+```
+
+
+## Exploratory analyses
+
+
+> Checking NAs
+
+```{r noNAsSites}
+sapply(data, function(x) sum(is.na(x)))
+```
+
+
+> Mean-centered variables
+
+```{r ScalingVariablesSites}
+data[,paste0(grep("_site",names(data),value = T),".sc")] <- scale(data[,grep("_site",names(data),value = T)])
+```
+
+
+```{r SquareCorrplotDataSites, fig.height=12}
+cor <- cor(data[,grep("_site.sc",names(data),value = T)])
+corrplot::corrplot(cor,method="number")
+```
+
+
+```{r CorrplotTriangleSites, fig.height=12}
+# matrix of the p-value of the correlation
+p.mat <- corpmat(cor)
+
+corrplot::corrplot(cor, method="color", col=col(200),  
+                   type="upper", order="hclust", 
+                   addCoef.col = "black", # Add coefficient of correlation
+                   tl.col="black", tl.srt=45, #Text label color and rotation
+                   # Combine with significance
+                   p.mat = p.mat, sig.level = 0.01, insig = "blank", 
+                   # hide correlation coefficient on the principal diagonal
+                   diag=FALSE)
+```
+
+```{r PCASites, fig.height=12}
+pca <- prcomp(data[,grep("_site.sc",names(data),value = T)], center = TRUE,scale. = TRUE)
+ggbiplot(pca,varname.size =4) +  ylim(-4.5, 2.5) +    xlim(-3, 3) +  
+   theme_minimal(base_size = 25) +
+  theme(plot.title = element_text(size=18))
+```
+
+## Selected variables
+
+Based on the exploratory analyses, we selected 6 variables describing the climatic conditions between test test sites (3 precipitation-related variables and 3 temperature-related variables). 
+
+- `pre_summer_min_site` (*min.presummer* in the manuscript): the minimum of the monthly precipitation during summer -June to September- (°C)
+
+- `pre_mean_1y_site` (*mean.pre* in the manuscript): the mean of the monthly precipitation (mm)
+
+- `pre_max_1y_site` (*max.pre* in the manuscript): the maximum of the monthly precipitation ( mm)
+
+- `tmn_min_1y_site` (*min.tmn* in the manuscript):  the minimum of the monthly minimum temperatures (°C)
+
+- `tmx_mean_1y_site.sc` (*mean.tmax* in the manuscript): the mean of monthly maximum temperatures (°C)
+
+- `tmx_max_1y_site` (*max.tmx* in the manuscript): the maximum of the monthly maximum temperatures (°C)
+
+
+```{r SelectedVariablesSites}
+select.var <- c("pre_summer_min_site.sc","pre_mean_1y_site.sc","tmn_min_1y_site.sc",
+                "tmx_max_1y_site.sc","pre_max_1y_site.sc","tmx_mean_1y_site.sc")
+```
+
+```{r CorrelationsSites}
+cor(data[,select.var])
+```
+
+```{r VIFSites}
+vif(data[,select.var])
+```
+
+## Matrices of environmental similarity
+
+2 options:
+
+- A matrix of Euclidean distance following @thomsonGuideUsingMultiplematrix2018.
+    
+- A variance-covariance matrix following @jarquinReactionNormModel2014.
+
+
+```{r PrepareDatasetSites}
+dat <- unique(data[,c("site_age",select.var)])
+row.names(dat) <- dat$site_age
+dat$site_age <- NULL 
+round(dat,3)
+```
+
+### Matrix of Euclidean distance 
+
+Following @thomsonGuideUsingMultiplematrix2018.
+
+I did not select this option in the manuscript as I did not know how to include a euclidean matrix in `brms`. 
+
+```{r EucliMatrixSites}
+euclimat <-as.matrix(dist(dat, method="euclidean", diag=TRUE,upper=TRUE))
+round(euclimat,3)
+
+# then scales so that the values are between 0 and 1
+euclimat <- 1- euclimat/max(euclimat, na.rm=TRUE)
+round(euclimat,3)
+```
+
+```{r SaveEucliMatrixSites}
+# saveRDS(euclimat, file = "../../data/EnvMat/EucliMatrixSites.rds")
+```
+
+
+### Variance-covariance matrix
+
+Following @jarquinReactionNormModel2014.
+
+This is the option used in the mannuscript.
+
+```{r VarCovMatrixSites, fig.height=8,fig.width=6}
+varmat <-as.matrix(var(t(dat)))
+round(varmat,3)
+heatmap(varmat)
+
+heatmap.2(as.matrix(varmat),scale="none",
+          col=brewer.pal(11,"RdBu"),
+          trace="none",key=F,
+          cexRow=1.5,cexCol=1.5,
+          margins=c(12,8))
+```
+
+```{r SaveHeatmapVarCovMatrixSites, echo=F,message=F}
+png("../../figs/SuppInfo/ExploringData/VarCovMatrixSites.png",width = 800,height=800)
+heatmap.2(as.matrix(varmat),scale="none",
+          col=brewer.pal(11,"RdBu"),
+          trace="none",key=F,
+          cexRow=1.5,cexCol=1.5,
+          margins=c(12,8))
+dev.off() 
+```
+
+```{r PosDefVarCovMatrixSites}
+is.symmetric.matrix(varmat)
+is.positive.definite(varmat)
+varmat.pd <- nearPD(varmat)$mat
+all.equal(as.matrix(varmat.pd),varmat)
+varmat.pd
+```
+
+
+```{r SavePosDefVarCovMatrixSites}
+# saveRDS(varmat.pd, file = "../../data/cleaned-data/EnvMat/VarCovMatSites.rds")
+```
+
+
+
+# Climatic similarity between provenances (P1)
+
+## Load and clean data
+
+
+```{r LoadDataProvenancesP1}
+data <- readRDS(file="../../data/TrainP1.RDS")
+```
+
+
+> Keeping the columns of interest
+
+```{r KeepColumnOfInterestProvenancesP1}
+data <- data[,c("prov",grep("_prov",colnames(data),value=T))]
+data <- data[,-(grep("tude",colnames(data)))]
+
+# Removing soil variables
+data <- data[,-(grep("_sub_",colnames(data)))]
+data <- data[,-(grep("_top_",colnames(data)))]
+data <- data[,-(grep("_roots_",colnames(data)))]
+```
+
+Keep only unique values:
+
+```{r UniqueValuesProvenancesP1}
+data <- unique(data)
+```
+
+
+## Exploratory analyses
+
+
+> Checking NAs
+
+```{r noNAsProvenancesP1}
+sapply(data, function(x) sum(is.na(x)))
+```
+
+
+> Mean-centered variables
+
+```{r ScalingVariablesProvenancesP1}
+data[,paste0(grep("_prov",names(data),value = T),".sc")] <- scale(data[,grep("_prov",names(data),value = T)])
+```
+
+
+```{r SquareCorrplotDataProvenancesP1, fig.height=12}
+cor <- cor(data[,grep("_prov.sc",names(data),value = T)])
+corrplot::corrplot(cor,method="number")
+```
+
+
+```{r CorrplotTriangleProvenancesP1, fig.height=12}
+# matrix of the p-value of the correlation
+p.mat <- corpmat(cor)
+
+corrplot::corrplot(cor, method="color", col=col(200),  
+                   type="upper", order="hclust", 
+                   addCoef.col = "black", # Add coefficient of correlation
+                   tl.col="black", tl.srt=45, #Text label color and rotation
+                   # Combine with significance
+                   p.mat = p.mat, sig.level = 0.01, insig = "blank", 
+                   # hide correlation coefficient on the principal diagonal
+                   diag=FALSE)
+```
+
+
+
+```{r PCAProvenancesP1, fig.height=12}
+pca <- prcomp(data[,grep("_prov.sc",names(data),value = T)], center = TRUE,scale. = TRUE)
+ggbiplot(pca,varname.size =4) +  ylim(-4.5, 2.5) +    xlim(-3, 3) +  
+   theme_minimal(base_size = 25) +
+  theme(plot.title = element_text(size=18))
+```
+
+## Selected variables
+
+We didn't keep bio13 because it was highly correlated to bio12. And we didn't keep `bio6` because it was correlated to `bio1`.
+
+```{r CorrBio12Bio13Bio5Bio6ProvenancesP1}
+cat(" data:","\n","corr bio12-bio13: ",cor(data$bio12_prov.sc,data$bio13_prov.sc), "\n",
+    "corr bio5-bio6: ",cor(data$bio1_prov.sc,data$bio6_prov.sc),"\n","\n")
+```
+
+Selected variables:
+
+- `bio1_prov.s` (*mean.temp* in the manuscript): the average of the annual daily mean temperature (°C).
+
+- `bio5_prov.sc` (*max.temp* in the manuscript): the average of the maximum temperature of the warmest month (°C).
+
+- `bio12_prov.sc` (*min.pre* in the manuscript): the average of the precipitation of the driest month (mm).
+
+- `bio14_prov.sc` (*mean.pre* in the manuscript): the average of the annual precipitation (mm).
+
+
+```{r SelectedVariablesProvenancesP1}
+select.var <- paste0("bio",c(1,5,12,14),"_prov.sc")
+```
+
+```{r CorrelationsProvenancesP1}
+cor(data[,select.var])
+```
+
+```{r VIFProvenancesP1}
+vif(data[,select.var]) 
+```
+
+## Matrices of environmental similarity
+
+2 options:
+
+- A matrix of Euclidean distance following @thomsonGuideUsingMultiplematrix2018.
+    
+- A variance-covariance matrix following @jarquinReactionNormModel2014.
+
+
+```{r PrepareDatasetProvenancesP1}
+dat <- unique(data[,c("prov",select.var)])
+row.names(dat) <- dat$prov
+dat$prov <- NULL 
+round(dat,3)
+```
+
+### Matrix of Euclidean distance 
+
+Following @thomsonGuideUsingMultiplematrix2018.
+
+I did not select this option in the manuscript as I did not know how to include a euclidean matrix in `brms`. 
+
+```{r EucliMatrixProvenancesP1}
+euclimat <-as.matrix(dist(dat, method="euclidean", diag=TRUE,upper=TRUE))
+round(euclimat,3)[1:10,1:10]
+
+# then scales so that the values are between 0 and 1
+euclimat <- 1- euclimat/max(euclimat, na.rm=TRUE)
+round(euclimat,3)[1:10,1:10]
+```
+
+```{r SaveEucliMatrixProvenancesP1}
+# saveRDS(euclimat, file = "../../data/EnvMat/EucliMatrixProvenancesP1.rds")
+```
+
+
+### Variance-covariance matrix
+
+Following @jarquinReactionNormModel2014.
+
+This is the option used in the mannuscript.
+
+```{r VarCovMatrixProvenancesP1,fig.height=13,fig.width=13}
+varmat <-as.matrix(var(t(dat)))
+round(varmat,3)[1:10,1:10]
+heatmap(varmat)
+
+heatmap.2(as.matrix(varmat),scale="none",
+          col=brewer.pal(11,"RdBu"),
+          trace="none",key=F,
+          cexRow=1.5,cexCol=1.5,
+          margins=c(12,8))
+```
+
+```{r SaveHeatmapVarCovMatrixProvenancesP1, echo=F,message=F}
+png("../../figs/SuppInfo/ExploringData/VarCovMatrixProvenancesP1.png",width = 1200,height=1200)
+heatmap.2(as.matrix(varmat),scale="none",
+          col=brewer.pal(11,"RdBu"),
+          trace="none",key=F,
+          cexRow=1.5,cexCol=1.5,
+          margins=c(12,8))
+dev.off() 
+```
+
+```{r PosDefVarCovMatrixProvenancesP1}
+is.symmetric.matrix(varmat)
+is.positive.definite(varmat)
+varmat.pd <- nearPD(varmat)$mat
+all.equal(as.matrix(varmat.pd),varmat)
+```
+
+
+```{r SavePosDefVarCovMatrixProvenancesP1}
+# saveRDS(varmat.pd, file = "../../data/cleaned-data/EnvMat/VarCovMatProvenancesP1.rds")
+```
+
+
+
+
+# Climatic similarity between provenances (P2)
+
+## Load and clean data
+
+
+```{r LoadDataProvenancesP2}
+data <- readRDS(file="../../data/TrainP1.RDS")
+```
+
+
+> Keeping the columns of interest
+
+```{r KeepColumnOfInterestProvenancesP2}
+data <- data[,c("prov",grep("_prov",colnames(data),value=T))]
+data <- data[,-(grep("tude",colnames(data)))]
+
+# Removing soil variables
+data <- data[,-(grep("_sub_",colnames(data)))]
+data <- data[,-(grep("_top_",colnames(data)))]
+data <- data[,-(grep("_roots_",colnames(data)))]
+```
+
+Keep only unique values:
+
+```{r UniqueValuesProvenancesP2}
+data <- unique(data)
+```
+
+
+## Exploratory analyses
+
+
+> Checking NAs
+
+```{r noNAsProvenancesP2}
+sapply(data, function(x) sum(is.na(x)))
+```
+
+
+> Mean-centered variables
+
+```{r ScalingVariablesProvenancesP2}
+data[,paste0(grep("_prov",names(data),value = T),".sc")] <- scale(data[,grep("_prov",names(data),value = T)])
+```
+
+
+```{r SquareCorrplotDataProvenancesP2, fig.height=12}
+cor <- cor(data[,grep("_prov.sc",names(data),value = T)])
+corrplot::corrplot(cor,method="number")
+```
+
+
+```{r CorrplotTriangleProvenancesP2, fig.height=12}
+# matrix of the p-value of the correlation
+p.mat <- corpmat(cor)
+
+corrplot::corrplot(cor, method="color", col=col(200),  
+                   type="upper", order="hclust", 
+                   addCoef.col = "black", # Add coefficient of correlation
+                   tl.col="black", tl.srt=45, #Text label color and rotation
+                   # Combine with significance
+                   p.mat = p.mat, sig.level = 0.01, insig = "blank", 
+                   # hide correlation coefficient on the principal diagonal
+                   diag=FALSE)
+```
+
+
+
+```{r PCAProvenancesP2, fig.height=12}
+pca <- prcomp(data[,grep("_prov.sc",names(data),value = T)], center = TRUE,scale. = TRUE)
+ggbiplot(pca,varname.size =4) +  ylim(-4.5, 2.5) +    xlim(-3, 3) +  
+   theme_minimal(base_size = 25) +
+  theme(plot.title = element_text(size=18))
+```
+
+## Selected variables
+
+We didn't keep bio13 because it was highly correlated to bio12. And we didn't keep `bio6` because it was correlated to `bio1`.
+
+```{r CorrBio12Bio13Bio5Bio6ProvenancesP2}
+cat(" data:","\n","corr bio12-bio13: ",cor(data$bio12_prov.sc,data$bio13_prov.sc), "\n",
+    "corr bio5-bio6: ",cor(data$bio1_prov.sc,data$bio6_prov.sc),"\n","\n")
+```
+
+Selected variables:
+
+- `bio1_prov.s` (*mean.temp* in the manuscript): the average of the annual daily mean temperature (°C).
+
+- `bio5_prov.sc` (*max.temp* in the manuscript): the average of the maximum temperature of the warmest month (°C).
+
+- `bio12_prov.sc` (*min.pre* in the manuscript): the average of the precipitation of the driest month (mm).
+
+- `bio14_prov.sc` (*mean.pre* in the manuscript): the average of the annual precipitation (mm).
+
+
+```{r SelectedVariablesProvenancesP2}
+select.var <- paste0("bio",c(1,5,12,14),"_prov.sc")
+```
+
+```{r CorrelationsProvenancesP2}
+cor(data[,select.var])
+```
+
+```{r VIFProvenancesP2}
+vif(data[,select.var])
+```
+
+## Matrices of environmental similarity
+
+2 options:
+
+- A matrix of Euclidean distance following @thomsonGuideUsingMultiplematrix2018.
+    
+- A variance-covariance matrix following @jarquinReactionNormModel2014.
+
+
+```{r PrepareDatasetProvenancesP2}
+dat <- unique(data[,c("prov",select.var)])
+row.names(dat) <- dat$prov
+dat$prov <- NULL 
+round(dat,3)
+```
+
+### Matrix of Euclidean distance 
+
+Following @thomsonGuideUsingMultiplematrix2018.
+
+I did not select this option in the manuscript as I did not know how to include a euclidean matrix in `brms`. 
+
+```{r EucliMatrixProvenancesP2}
+euclimat <-as.matrix(dist(dat, method="euclidean", diag=TRUE,upper=TRUE))
+round(euclimat,3)[1:10,1:10]
+
+# then scales so that the values are between 0 and 1
+euclimat <- 1- euclimat/max(euclimat, na.rm=TRUE)
+round(euclimat,3)[1:10,1:10]
+```
+
+```{r SaveEucliMatrixProvenancesP2}
+# saveRDS(euclimat, file = "../../data/EnvMat/EucliMatrixProvenancesP2.rds")
+```
+
+
+### Variance-covariance matrix
+
+Following @jarquinReactionNormModel2014.
+
+This is the option used in the mannuscript.
+
+```{r VarCovMatrixProvenancesP2,fig.height=13,fig.width=13}
+varmat <-as.matrix(var(t(dat)))
+round(varmat,3)[1:10,1:10]
+heatmap(varmat)
+
+heatmap.2(as.matrix(varmat),scale="none",
+          col=brewer.pal(11,"RdBu"),
+          trace="none",key=F,
+          cexRow=1.5,cexCol=1.5,
+          margins=c(12,8))
+```
+
+```{r SaveHeatmapVarCovMatrixProvenancesP2, echo=F,message=F}
+png("../../figs/SuppInfo/ExploringData/VarCovMatrixProvenancesP2.png",width = 1200,height=1200)
+heatmap.2(as.matrix(varmat),scale="none",
+          col=brewer.pal(11,"RdBu"),
+          trace="none",key=F,
+          cexRow=1.5,cexCol=1.5,
+          margins=c(12,8))
+dev.off() 
+```
+
+```{r PosDefVarCovMatrixProvenancesP2}
+is.symmetric.matrix(varmat)
+is.positive.definite(varmat)
+varmat.pd <- nearPD(varmat)$mat
+all.equal(as.matrix(varmat.pd),varmat)
+```
+
+
+```{r SavePosDefVarCovMatrixProvenancesP2}
+# saveRDS(varmat.pd, file = "../../data/cleaned-data/EnvMat/VarCovMatProvenancesP2.rds")
+```
+
+`r knitr::opts_chunk$set(eval = F)`
+
+# References
