@@ -47,7 +47,6 @@ pre[class] {
 ```{r setup, include=FALSE}
 options(width = 300)
 library(knitr)
-options(mc.cores = parallel::detectCores())
 library(readr)
 library(RColorBrewer)
 library(cowplot)
@@ -61,8 +60,6 @@ library(gplots)
 library(MASS)
 library(bayesplot)
 library(bdsmatrix)
-library(rethinking)
-library(compare)
 knitr::opts_chunk$set(cache=F)
 ```
 
@@ -176,7 +173,7 @@ where $\mathbf{T}$ is lower triangular matrix with transposed $\mathbf{T}^\inter
 
 - This text comes from [Muff et al. (2019)](https://gsejournal.biomedcentral.com/track/pdf/10.1186/s12711-019-0449-7)
 
-```{r cholesky_decomp_A}
+```{r CholeskyDecompositionA}
 A.gchol <- gchol(A)
 # A.gchol[1:10,1:10]
 
