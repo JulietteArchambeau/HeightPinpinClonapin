@@ -1,0 +1,605 @@
+---
+title: "Gene pool specific additive genetic variances"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    # code_fold: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+bibliography: references.bib 
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+
+```{r setup, include=FALSE}
+options(width = 300)
+library(knitr)
+options(mc.cores = parallel::detectCores())
+library(readr)
+library(RColorBrewer)
+library(cowplot)
+library(ggplot2)
+library(LaplacesDemon)
+library(dplyr)
+library(matrixcalc)
+library(MCMCglmm)
+library(compare)
+library(gplots)
+library(MASS)
+library(bayesplot)
+library(bdsmatrix)
+library(rethinking)
+library(compare)
+knitr::opts_chunk$set(cache=F)
+```
+
+
+> This document is based on the method of @muffAnimalModelsGroupspecific2019.
+
+
+#  Model equation based on equation 4 in [Muff et al. (2019)](https://gsejournal.biomedcentral.com/track/pdf/10.1186/s12711-019-0449-7)
+
+In this model, we want to both take into account the <span style="color:purple">population structure</span> and potentially <span style="color:purple">heterogeneous additive genetic variances between gene pools</span>. For that, we can use the following equation:
+
+\begin{equation}
+y_{g} \sim \mathcal{N}( \beta_{0} + \sum_{j=1}^{r} q_{gj}g_{j} + \sum_{j=1}^{r} u_{gj}, \sigma_{g}^{2})
+\end{equation}
+
+- The <span style="color:purple">**population structure**</span> is considered in the term: $\sum_{j=1}^{r} q_{gj}g_{j}$. In this term,
+
+    - $q_{gj}$ is the proportional contribution of the gene pool $j$ to the genome of the genotype $g$ estimated in @jaramillo-correaMolecularProxiesClimate2015. The respective values are typically written into a matrix $\mathbf{Q}$ with $n$ rows ($n$ = number of genotypes) and $r$ columns ($r$ = number of gene pools), such that $q_{gj}$ is the value in the $g^{th}$ row and $j^{th}$ column. <span style="color:orange">(Data)</span>
+
+    - $g_{j}$ is the expected average genetic effect in the gene pool $j$. There are $r$ gene pools (6 in our case). <span style="color:orange">(To be estimated)</span>
+    
+- The potentially <span style="color:purple">**heterogeneous additive genetic variances between gene pools**</span> is considered in the term: $\sum_{j=1}^{r} u_{gj}$. In this term,
+
+    - $u_{j}^\intercal = (u_{1j},...,u_{nj})^\intercal \sim \mathcal{N}(0,\sigma_{A_{j}}^{2} \mathbf{A}_{j})$ for all gene pools $j=1,...,r$ where $\sigma_{A}^{2}$ is the additive genetic variance in group $j$ and $\mathbf{A}_{j}$ is a gene pool specific relatedness matrix. We denote $u_{gj}$ as the <span style="color:purple">*partial breeding value*</span>, because it represents the contribution to the breeding value of genotype $g$ that is inherited from the gene pool $j$. Consequently, $\mathbf{A}_{j}$ contains the relatedness at the genes that have come from that group for each pair of genotypes. We assume that the contributions $u_{ij}$ of the same genotype $g$ are independent of each other, because they differ in genetic origin <span style="color:orange">. (To be estimated)</span>
+
+
+> In this document, we calculate the 6 gene pool specific genetic relatedness matrices $\mathbf{A}_{j}$.
+
+
+# Loading and formatting
+
+## Population structure
+
+
+```{r ExtractQproportion}
+all.data <- readRDS(file="../../data/AllDataPhenoClimSoil.RDS")
+
+sub.Q <- all.data[,c("clon",paste0("Q",rep(1:6)))]
+rm(all.data)
+sub.Q <- unique(sub.Q)
+length(sub.Q$clon)
+
+# 18 clones have no population structure data
+sapply(sub.Q, function(x) sum(is.na(x)))
+sub.Q <- sub.Q[complete.cases(sub.Q),]
+length(sub.Q$clon)
+
+head(sub.Q)
+
+# Due to approximations, there are some negative values (-0.001) in the gene pool Q6
+# Let's set these negative values to 0.
+sum(sub.Q[,c(paste0("Q",rep(1:6)))]<0)
+filter_at(sub.Q,c(paste0("Q",rep(1:6))),any_vars(. < 0))
+sub.Q$Q6[sub.Q$Q6<0] <- 0
+```
+
+
+![From Jamarillo-Correa et al. (2015)](jamarillocorrea.png)
+
+According to Jamarillo-Correa et al. (2015):
+
+- `Q1`: Northern Africa
+
+- `Q2`: Corsica
+
+- `Q3`: Central Spain
+
+- `Q4`: Atlantic France
+
+- `Q5`: Atlantic (Iberian)
+
+- `Q6`: South-eastern Spain
+
+
+
+## A-matrix (GRM)
+
+Load the grm built from "neutral" SNPs. 
+
+```{r LoadGrm}
+A <- readRDS(file="../../data/GRMs/GRMVanRaden.RDS")
+is.symmetric.matrix(A)
+is.positive.definite(A)
+A[1:10,1:10]
+range(A)
+```
+
+## Q-matrix
+
+```{r Qmat}
+Qmat <- sub.Q
+row.names(Qmat) <- Qmat$clon
+Qmat$clon <- NULL
+names(Qmat)
+identical(row.names(A),row.names(Qmat))
+Qmat
+```
+
+
+# Decomposition of the relatedness matrix A
+
+Generalized Cholesky decomposition of $\mathbf{A}$ into:
+
+$$\mathbf{A} = \mathbf{T} \mathbf{D} \mathbf{T}^\intercal$$
+
+where $\mathbf{T}$ is lower triangular matrix with transposed $\mathbf{T}^\intercal$ , and $\mathbf{D} = \text{Diag}(d_{11},...,d_{nn})$ is a diagonal matrix with entries $d_{11},...,d_{nn}$. A useful property of the decomposition is that the matrices $\mathbf{T}$ and  $\mathbf{D}$ have elegant interpretations:  $\mathbf{T}$ traces the flow of alleles between genotypes, and the diagonal entries of  $\mathbf{D}$ scales the Mendelian sampling variance.
+
+- **Comment on $\mathbf{T}$:** Each off-diagonal entry in $\mathbf{T}$ corresponds to the relatedness coefficient (expected relatedness) between genotypes $g$. All diagonal elements are 1 and all elements below the diagonal in the respective column correspond to the expected proportion of the genome that is shared between genotypes.
+
+- **Comment on $\mathbf{D}$:** In the absence of inbreeding, the diagonal entry $d_{gg}$ for genotype $g$ in $\mathbf{D}$ is $(1-0.5 p_{g})$, with $p_{g}$ corresponfing to the proportion of proportion of $g$'s ancestral genome that is known. Possible values are $p_{g} = 0, 0.5 \, \text{or} \, 1$ if no, one or two parents are known, respectively. This can be understood as follows: if, for example, one parent of an animal $g$ is unknown, its predicted breeding value is 0.5 times the breeding value of the known parent, but the other half of its breeding value is unknown. The deviation from the predicted breeding value that could be obtained if both parents were known is absorbed by the Mendelian sampling deviation. The respective variance thus contains the Mendelian sampling variance plus a variance that is due to the unknown parent. The more parents are unknown, the larger is this variance. In our case, the parents are unknown and we assume no inbreeding (as the seeds were collected 100 meters away), so $p_{g}=0$ and $d_{gg}=1$.
+
+- This text comes from [Muff et al. (2019)](https://gsejournal.biomedcentral.com/track/pdf/10.1186/s12711-019-0449-7)
+
+```{r cholesky_decomp_A}
+A.gchol <- gchol(A)
+# A.gchol[1:10,1:10]
+
+# Matrix T
+T <- as.matrix(A.gchol)
+T[1:10,1:10]      
+
+# Transpose of matrix T
+Tt <- t(as.matrix(A.gchol))
+Tt[1:10,1:10]      
+
+# diagonal matrix D
+diag.A <- diag(A.gchol) # vector of numeric values
+D <- Diagonal(x=diag.A)
+D[1:10,1:10]
+
+# checking that we find the same value
+Abis <- T %*%  D %*% Tt
+Abis <- as.matrix(Abis)
+all.equal(A,Abis)
+rm(Abis)
+```
+
+
+# Group-specific matrices $\mathbf{A}_{j}$
+
+In our case, we have $r$ = 6 gene pools. For each gene pool $j$, we want to compute the respective genomic relatedness matrices $\mathbf{A}_{j}$ , which can be decomposed like we did for $\mathbf{A}$:
+
+$$\mathbf{A}_{j} = \mathbf{T}_{j} \mathbf{D}_{j} \mathbf{T}_{j}^\intercal$$
+
+## Calculate $\mathbf{T}_{j}$
+
+The matrices $\mathbf{T}_{j}$ are obtained by scaling the respective entries in $\mathbf{T}$ by the respective gene pool-proportions from the Q-matrix. This is achieved by multiplying each row of $\mathbf{T}$ by $q_{j}$, such as:
+
+$$\mathbf{T}_{j} =  \mathbf{T} \cdot \text{Diag}(q_{j})$$
+
+where $\text{Diag}(q_{j})$ is a diagonal matrix with diagonal equal to $q_{j}$.
+
+
+```{r Equation8MuffQ1}
+# Let's calculate T1
+D1 <- Diagonal(x=Qmat[,1])
+T1 <- T %*% D1
+T1[1:10,1:10]
+```
+Let's do the same for the other gene pools:
+
+```{r Equation8MuffQ2toQ6,message=F,warning=F}
+# T2
+D2 <- Diagonal(x=Qmat[,2])
+T2 <- T %*% D2
+T2[1:10,1:10]
+
+# T3
+D3 <- Diagonal(x=Qmat[,3])
+T3 <- T %*% D3
+T3[1:10,1:10]
+
+# T4
+D4 <- Diagonal(x=Qmat[,4])
+T4 <- T %*% D4
+T4[1:10,1:10]
+
+# T5
+D5 <- Diagonal(x=Qmat[,5])
+T5 <- T %*% D5
+T5[1:10,1:10]
+
+# T6
+D6 <- Diagonal(x=Qmat[,6])
+T6 <- T %*% D6
+T6[1:10,1:10]
+```
+
+
+## Calculate $\mathbf{D}_{j}$
+
+In [Muff et al. (2019)](https://gsejournal.biomedcentral.com/track/pdf/10.1186/s12711-019-0449-7), it is written: "[...] in the absence of inbreeding, $d_{gg} = 1 − 0.5p_{g}$ with $p_{g}$ representing the proportion of the ancestral genome that is known. To calculate the respective entries $d_{gg}^{(j)}$ in the specific matrix of gene pool $j$, we have to multiply $p_{g}$ by the proportions of genetic origin $q_{gj}$, because the respective product then corresponds to the ancestral proportions that are known within the respective gene pool $j$. In the case where only one parent is known, multiplication must be with the genetic proportion of the known parent, denoted here as $q_{gj}$ , because only this respective part of the ancestral genome within group $j$ is then known. This leads to:
+
+\begin{equation}
+  d_{gg}^{(j)} =
+    \begin{cases}
+      1, & \text{if no parent is known}\\
+      1-0.25 \cdot q_{gj}^{(p)}, & \text{if one parent is known}\\
+      1-0.5 \cdot q_{gj}, & \text{if both parents are known}
+    \end{cases}       
+\end{equation}
+
+In our case:
+
+- we can make the assumption that we are in absence in inbreeding (as the seeds were collected 100 meters away).
+
+- the parents are unknown
+
+So $d_{gg}^{(j)} = 1$ for all genotypes $g$ in all gene pools $j$. 
+
+
+```{r Equation10Muff}
+diij <- rep(1,523)
+
+# Using equation 10 of Muff et al. (2019) gives the same result:
+# diij <- 1-Qmat[,1]*(1-rep(1,523))
+```
+
+Let's calculate $\mathbf{D}_{j}$ which is the same for all gene pool $j$.
+
+```{r CalculateDj}
+Dj <- Diagonal(x=diij)
+Dj[1:10,1:10]
+```
+
+
+
+## Calculate $\mathbf{A}_{j}$
+
+Reminder: 
+
+$$\mathbf{A}_{j} = \mathbf{T}_{j} \mathbf{D}_{j} \mathbf{T}_{j}^\intercal$$
+
+
+> $\mathbf{A}_{1}$ (relatedness matrix specific of gene pool 1)
+
+```{r A1, warning=F,message=F}
+A1 <- T1 %*%  Dj %*% t(T1)
+A1[1:10,1:10]
+is.symmetric.matrix(as.matrix(A1)) # The matrix is symetric
+is.positive.definite(as.matrix(A1)) # The matrix is not positive definite
+A1pd <- nearPD(A1) # Function to approximate the nearest positive definite matrix
+all.equal(as.matrix(A1),as.matrix(A1pd$mat))
+```
+
+```{r SaveA1,echo=F}
+# saveRDS(as.matrix(A1pd$mat),file="../../data/GRMs/a1_grm.rds")
+```
+
+> $\mathbf{A}_{2}$ (relatedness matrix specific of gene pool 2)
+
+```{r A2, warning=F,message=F}
+A2 <- T2 %*%  Dj %*% t(T2)
+is.symmetric.matrix(as.matrix(A2))
+is.positive.definite(as.matrix(A2))
+A2[1:10,1:10]
+A2pd <- nearPD(A2)
+all.equal(as.matrix(A2),as.matrix(A2pd$mat))
+```
+
+```{r SaveA2,echo=F}
+# saveRDS(as.matrix(A2pd$mat),file="../../data/GRMs/a2_grm.rds")
+```
+
+> $\mathbf{A}_{3}$ (relatedness matrix specific of gene pool 3)
+
+```{r A3, warning=F,message=F}
+A3 <- T3 %*%  Dj %*% t(T3)
+is.symmetric.matrix(as.matrix(A3))
+is.positive.definite(as.matrix(A3))
+A3pd <- nearPD(A3)
+all.equal(as.matrix(A3),as.matrix(A3pd$mat))
+```
+
+```{r SaveA3,echo=F}
+# saveRDS(as.matrix(A3pd$mat),file="../../data/GRMs/a3_grm.rds")
+```
+
+> $\mathbf{A}_{4}$ (relatedness matrix specific of gene pool 4)
+
+
+```{r A4, warning=F,message=F}
+A4 <- T4 %*%  Dj %*% t(T4)
+is.symmetric.matrix(as.matrix(A4))
+is.positive.definite(as.matrix(A4))
+A4pd <- nearPD(A4)
+all.equal(as.matrix(A4),as.matrix(A4pd$mat))
+```
+
+```{r SaveA4,echo=F}
+#saveRDS(as.matrix(A4pd$mat),file="../../data/GRMs/a4_grm.rds")
+```
+
+
+> $\mathbf{A}_{5}$ (relatedness matrix specific of gene pool 5)
+
+```{r A5, warning=F,message=F}
+A5 <- T5 %*%  Dj %*% t(T5)
+is.symmetric.matrix(as.matrix(A5))
+is.positive.definite(as.matrix(A5))
+A5pd <- nearPD(A5)
+all.equal(as.matrix(A5),as.matrix(A5pd$mat))
+as.matrix(A5pd$mat)[1:10,1:10]
+```
+
+```{r SaveA5,echo=F}
+#saveRDS(as.matrix(A5pd$mat),file="../../data/GRMs/a5_grm.rds")
+```
+
+
+> $\mathbf{A}_{6}$ (relatedness matrix specific of gene pool 6)
+
+```{r A6, warning=F,message=F}
+A6 <- T6 %*%  Dj %*% t(T6)
+is.symmetric.matrix(as.matrix(A6))
+is.positive.definite(as.matrix(A6))
+A6pd <- nearPD(A6)
+all.equal(as.matrix(A6),as.matrix(A6pd$mat))
+as.matrix(A6pd$mat)[1:10,1:10]
+```
+
+```{r SaveA6,echo=F}
+#saveRDS(as.matrix(A6pd$mat),file="../../data/GRMs/a6_grm.rds")
+```
+
+
+
+# Heatmaps of $\mathbf{A}_{j}$ matrices
+
+##  Basic matrices 
+
+```{r HeatmapsAj, fig.width=10,fig.height=10,eval=F}
+heatmap(as.matrix(A1))
+heatmap(as.matrix(A2))
+heatmap(as.matrix(A3))
+heatmap(as.matrix(A4))
+heatmap(as.matrix(A5))
+heatmap(as.matrix(A6))
+```
+
+## With `gplots`
+
+```{r HeatmapsGplots, fig.height=10,fig.width=14}
+heatmap.2(as.matrix(A1),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+heatmap.2(as.matrix(A2),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+heatmap.2(as.matrix(A3),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+heatmap.2(as.matrix(A3),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+heatmap.2(as.matrix(A4),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+heatmap.2(as.matrix(A5),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+heatmap.2(as.matrix(A6),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+```
+
+It seems ok! For each matrice $\mathbf{A}_{j}$ , genotypes with higher absolute values are the genotypes that belong the most from the gene pool $j$. See table below for the number of genotypes that mainly belong to each gene pool.
+
+```{r MainGenepoolPerProv}
+ps <- readRDS(file="../../data/AllDataPhenoClimSoil.RDS")
+ps <- unique(ps[,c("prov","clon","max.Q")])
+table(ps$prov,ps$max.Q)
+```
+
+- `Q1`: Northern Africa
+
+- `Q2`: Corsica
+
+- `Q3`: Central Spain
+
+- `Q4`: Atlantic France
+
+- `Q5`: Atlantic (Iberian)
+
+- `Q6`: South-eastern Spain
+
+# Checking with inverse matrices
+
+> Section 3.3.4 and Supp info of [Muff et al. (2019)](https://gsejournal.biomedcentral.com/track/pdf/10.1186/s12711-019-0449-7)
+
+Here I wanted to check whether I obtained the same $\mathbf{A}_{j}$ when applying the methodology of @muffAnimalModelsGroupspecific2019 in section 3.3.4 (Scaling the inverse relatedness matrix) and their tutorial in Supplementary. They use the inverse of the relatedness matrix because `MCMCglmm` and `INLA` work with the inverse relatedness matrices.
+
+For that, we need to apply the following formula:
+
+
+$$\mathbf{A^{-1}} = (\mathbf{T^{-1}})^\intercal \mathbf{D^{-1}} \mathbf{T^{-1}}$$
+
+And for each $\mathbf{A_{j}^{-1}}$,
+
+$$\mathbf{A_{j}^{-1}} = (\mathbf{T^{-1}})^\intercal \mathbf{\tilde{D}_{j}^{-1}} \mathbf{T^{-1}}$$
+ with $\mathbf{\tilde{D}_{j}^{-1}}$ with diagonal entries $1 / (d_{gg}^{(j)} \cdot q_{gj}^{2})$. 
+
+First, let's compute $\mathbf{T^{-1}}$, which is the inverse of $\mathbf{T}$ computed using the generalized Cholesky decomposition of $\mathbf{A}$. 
+
+
+```{r computing_Tinv}
+Tinv <- solve(T)
+Tinv[1:10,1:10]
+```
+
+Then, let's compute the diagonal matrices $\mathbf{\tilde{D}_{j}^{-1}}$ for each gene pool $j$. 
+
+First, let's apply the $1/q_{gj}^{2}$ scaling, where $q_{gj}$ is replaced by $10^{-12}$ if $q_{gj} = 0$.
+
+```{r scalings_qgj}
+scaling1 <- ifelse(Qmat[,1]>0,1/(Qmat[,1])^2,1e12)
+scaling2 <- ifelse(Qmat[,2]>0,1/(Qmat[,2])^2,1e12)
+scaling3 <- ifelse(Qmat[,3]>0,1/(Qmat[,3])^2,1e12)
+scaling4 <- ifelse(Qmat[,4]>0,1/(Qmat[,4])^2,1e12)
+scaling5 <- ifelse(Qmat[,5]>0,1/(Qmat[,5])^2,1e12)
+scaling6 <- ifelse(Qmat[,6]>0,1/(Qmat[,6])^2,1e12)
+```
+
+Then let's generate the $d_{gg}^{(j)}$ values. In our case, they are all equal to 1 as the parents are unknown.
+
+```{r dgg_values}
+Dgg <- rep(1,523)
+```
+
+And then obtain $\mathbf{\tilde{D}_{j}^{-1}}$ with diagnonal entries equal to $1 / (d_{gg}^{(j)} \cdot q_{gj}^{2})$.
+
+```{r diagonal_j_inv}
+DInvtilde1 <- Diagonal(x=1/(Dgg) * scaling1)
+range(DInvtilde1)
+DInvtilde1[1:10,1:10]
+
+
+DInvtilde2 <- Diagonal(x=1/(Dgg) * scaling2)
+DInvtilde3 <- Diagonal(x=1/(Dgg) * scaling3)
+DInvtilde4 <- Diagonal(x=1/(Dgg) * scaling4)
+DInvtilde5 <- Diagonal(x=1/(Dgg) * scaling5)
+DInvtilde6 <- Diagonal(x=1/(Dgg) * scaling6)
+```
+
+
+Let's compute the $\mathbf{A_{j}^{-1}}$ with the equation: $\mathbf{A_{j}^{-1}} = (\mathbf{T^{-1}})^\intercal \mathbf{\tilde{D}_{j}^{-1}} \mathbf{T^{-1}}$
+
+```{r Ainv_j}
+Ainv1 <- crossprod(sqrt(DInvtilde1) %*% solve(T))
+Ainv2 <- crossprod(sqrt(DInvtilde2) %*% solve(T))
+Ainv3 <- crossprod(sqrt(DInvtilde3) %*% solve(T))
+Ainv4 <- crossprod(sqrt(DInvtilde4) %*% solve(T))
+Ainv5 <- crossprod(sqrt(DInvtilde5) %*% solve(T))
+Ainv6 <- crossprod(sqrt(DInvtilde6) %*% solve(T))
+```
+
+Comparing the inverse of the $\mathbf{A_{j}^{-1}}$ matrices with the $\mathbf{A_{j}}$ matrices.
+
+
+> $\mathbf{A_{1}^{-1}}$ and $\mathbf{A_{1}}$
+
+```{r ComparingAinv1andA1,warning=F,message=F}
+Ainv1.inv <- solve(Ainv1)
+Ainv1.inv[1:10,1:10]
+A1[1:10,1:10]
+all.equal(as.matrix(Ainv1.inv),as.matrix(A1))
+sum(A1 - Ainv1.inv)
+```
+
+They are very closed but not numerically equal..
+
+
+> $\mathbf{A_{2}^{-1}}$ and $\mathbf{A_{2}}$
+
+```{r ComparingAinv2andA2,warning=F,message=F}
+Ainv2.inv <- solve(Ainv2)
+Ainv2.inv[1:10,1:10]
+A2[1:10,1:10]
+all.equal(as.matrix(Ainv2.inv),as.matrix(A2))
+sum(A2 - Ainv2.inv)
+```
+
+
+> $\mathbf{A_{3}^{-1}}$ and $\mathbf{A_{3}}$
+
+```{r ComparingAinv3andA3,warning=F,message=F}
+Ainv3.inv <- solve(Ainv3)
+Ainv3.inv[1:10,1:10]
+A3[1:10,1:10]
+all.equal(as.matrix(Ainv3.inv),as.matrix(A3))
+sum(A3 - Ainv3.inv)
+```
+
+
+> $\mathbf{A_{4}^{-1}}$ and $\mathbf{A_{4}}$
+
+```{r ComparingAinv4andA4,warning=F,message=F}
+Ainv4.inv <- solve(Ainv4)
+Ainv4.inv[1:10,1:10]
+A4[1:10,1:10]
+all.equal(as.matrix(Ainv4.inv),as.matrix(A4))
+sum(A4 - Ainv4.inv)
+```
+
+> $\mathbf{A_{5}^{-1}}$ and $\mathbf{A_{5}}$
+
+```{r ComparingAinv5andA5, warning=F,message=F}
+Ainv5.inv <- solve(Ainv5)
+Ainv5.inv[1:10,1:10]
+A5[1:10,1:10]
+all.equal(as.matrix(Ainv5.inv),as.matrix(A5))
+sum(A5 - Ainv5.inv)
+```
+
+
+
+> $\mathbf{A_{6}^{-1}}$ and $\mathbf{A_{6}}$
+
+```{r ComparingAinv6andA6,warning=F,message=F}
+Ainv6.inv <- solve(Ainv6)
+Ainv6.inv[1:10,1:10]
+A6[1:10,1:10]
+all.equal(as.matrix(Ainv6.inv),as.matrix(A6))
+sum(A6 - Ainv6.inv)
+```
+
+> Let's see how it is when matrices are corrected to be positive definite. 
+
+
+
+
+```{r ComparingAinv1andA1Posdef,warning=F,message=F}
+is.symmetric.matrix(as.matrix(Ainv1))
+is.positive.definite(as.matrix(Ainv1))
+Ainv1.inv <- solve(Ainv1)
+is.symmetric.matrix(as.matrix(Ainv1.inv))
+is.positive.definite(as.matrix(Ainv1.inv))
+Ainv1.inv.pd <- nearPD(Ainv1.inv)
+is.positive.definite(as.matrix(Ainv1.inv.pd$mat))
+
+Ainv1.inv.pd$mat[1:10,1:10]
+A1pd$mat[1:10,1:10]
+all.equal(as.matrix(Ainv1.inv.pd$mat),as.matrix(A1pd$mat))
+sum(A1pd$mat - Ainv1.inv.pd$mat)
+```
+
+The mean relative difference is equal to the difference between the inverse of $\mathbf{A_{1}^{-1}}$ and $\mathbf{A_{1}}$ that are not corrected to be positive definite. The sum of the differences is higher when the matrices are positive definite. 
+
+
+`r knitr::opts_chunk$set(eval = F)`
+
+
+
+# References
