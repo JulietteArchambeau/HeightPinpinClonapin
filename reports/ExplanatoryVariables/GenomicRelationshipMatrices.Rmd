@@ -1,0 +1,699 @@
+---
+title: "Calculating the genomic relationship matrices"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    # code_fold: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+bibliography: references.bib 
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+
+```{r setup, include=FALSE}
+options(width = 300)
+library(knitr)
+library(readr)
+library(cowplot)
+library(ggplot2)
+library(gplots)
+library(dplyr)
+library(Matrix)
+library(matrixcalc)
+library(AGHmatrix)
+library(compare)
+library(RColorBrewer)
+library(synbreed)
+library(MASS)
+knitr::opts_chunk$set(cache=F)
+```
+
+In this report, we used `piMASS` outputs. `piMASS` (Posterior inference using Model Averaging and Subset Selection) is a software on [Stephens lab website](https://stephenslab.uchicago.edu/software.html#pimass). `piMASS` is  written and maintained by Yongtao Guan, implements MCMC-based inference methods for Bayesian variable-selection regression described in @guanBayesianVariableSelection2011. 
+
+
+GRM = Genomic relationship matrix = kinship matrix with relationship between individuals estimated using genomic markers. 
+
+
+# A GRM with all SNPs
+
+In this first section, we calculate a genomic relationship matrix with all the SNPs. 
+
+
+## Data
+
+### Load and format genotype file
+
+<span style="color:blue">**Comment**</span>: Not in R, I used the "find and replace" function of *Mousepad* to replace `?` by  `NA` in the file `5165snps523genotypes.txt`. There were 17263 substitutions. After these changes, the new file was called "5165snps523genotypesNA.txt". 
+
+
+Then, in R, here are the different steps to format data:
+
+- load files with the genotype names and the genotype of each clone for each SNP
+- remove columns of no interest
+- reassign to each genotype its name using another file (`geno_names`).
+
+
+```{r  LoadFilesSection1}
+# File with the genotype names (clone names)
+geno_names <- read.delim2("../../data/ClonapinBlups523IndPiMASSJuly2019.txt", row.names=1)
+
+# File with the genotype of each clone for each SNP
+geno <- read.csv("../../data/5165snps523genotypesNA.txt", header=FALSE, row.names=1)
+str(geno[,1:8])
+dim(geno) # SNPs in rows, genotypes in columns
+
+# In this file, SNPs have their names, but not the genotypes.
+head(geno[,1:10])
+```
+
+```{r FormatingFilesSection1}
+# Removing the first two columns with allele info (A,T, G or C)
+geno <- geno[,3:dim(geno)[[2]]]
+
+# genotype name for each column
+colnames(geno) <- rownames(geno_names)
+
+rm(geno_names)
+
+head(geno[,1:10])
+```
+
+
+### Looking at NAs
+
+```{r NAs}
+sum(is.na(geno))
+sapply(geno, function(x) sum(is.na(x)))
+```
+
+
+**How many NAs per genotype? (=per column)**
+
+```{r NAsPerColumn}
+column_nas <- sapply(geno, function(x) sum(is.na(x)))
+
+# All genotypes have several SNPs with missing values
+length(column_nas[column_nas>0]) 
+
+# Range and mean of the number of missing values for each genotype:
+range(column_nas)
+mean(column_nas)
+```
+
+**How many NAs per SNP? (=per row)**
+
+```{r NAsPerRow}
+rows_nas <- apply(geno,1,function (x) sum (is.na (x)))
+
+# Range of the number of missing values for each SNP:
+range(rows_nas) 
+
+# Mean number of missing values for each SNP
+mean(rows_nas)
+
+# Number of SNPs with at least one missing value
+length(rows_nas[rows_nas>0])
+
+# Number of SNPs with at least 2 missing values
+length(rows_nas[rows_nas>1])
+```
+
+**Histograms of NAs per genotype and per SNP**
+
+```{r HistNAs, echo=F,fig.height=6,fig.width=15}
+plot_grid(ggplot(as.data.frame(column_nas), aes(column_nas),bins=100) + geom_histogram(aes(y = ..count..), fill="darkgreen",binwidth = 3, alpha=0.4) + 
+  labs(title="Number of NAs per genotype",x="Number of NAs", y = "Count") +
+  theme_bw() +
+  theme(axis.line = element_line(size=0.5, colour = "black"),
+              panel.grid.major = element_line(colour = "#d3d3d3"),
+              panel.grid.minor = element_blank()),
+  ggplot(as.data.frame(rows_nas), aes(rows_nas),bins=50) + geom_histogram(aes(y = ..count..), fill="blue",binwidth = 2, alpha=0.4) + 
+  labs(title="Number of NAs per SNP",x="Number of NAs", y = "Count") +
+  theme_bw() +
+  theme(axis.line = element_line(size=0.5, colour = "black"),
+              panel.grid.major = element_line(colour = "#d3d3d3"),
+              panel.grid.minor = element_blank())) 
+
+
+```
+
+```{r HistNAsbis, echo=F,fig.height=6,fig.width=15}
+plot_grid(ggplot(as.data.frame(column_nas[column_nas>25]), aes(column_nas[column_nas>25]),bins=100) + geom_histogram(aes(y = ..count..), fill="darkgreen",binwidth = 3, alpha=0.4) + 
+  labs(title="Number of NAs per genotype",subtitle = "For genotypes with number of NAs higher than 25",x="Number of NAs", y = "Count") +
+  theme_bw() +
+  theme(axis.line = element_line(size=0.5, colour = "black"),
+              panel.grid.major = element_line(colour = "#d3d3d3"),
+              panel.grid.minor = element_blank()),
+  ggplot(as.data.frame(rows_nas[rows_nas>10]), aes(rows_nas[rows_nas>10]),bins=50) + geom_histogram(aes(y = ..count..), fill="blue",binwidth = 2, alpha=0.4) + 
+  labs(title="Number of NAs per SNP",subtitle = "For SNPs with number of NAs higher than 10",x="Number of NAs", y = "Count") +
+  theme_bw() +
+  theme(axis.line = element_line(size=0.5, colour = "black"),
+              panel.grid.major = element_line(colour = "#d3d3d3"),
+              panel.grid.minor = element_blank())) 
+```
+
+### Checking major/minor alleles for each SNP
+
+Here, I just wanted to check that for a given genotype (clone):
+
+- SNPs coded with `0` were homozygotes for the major allele. 
+- SNPs coded with `1` were heterozygotes.
+- SNPs coded with `2` were homozygotes for the minor alleles
+
+This is not the case for three SNPs that have more homozygotes for the minor alleles than for the major allele. I don't think that this is a problem to compute the GRM matrix, because even if the SNPs have to be ordered with `0`,`1` and `2`, `2` does not necessarily have to be the homozygotes of the minor allele (and `0` the homozygotes of the major allele). Santiago Gonzalez-Martinez also said that there was no prolem here.
+
+```{r CheckMinorAlleles}
+# Number of 0 for each SNP
+zero <- apply(geno,1,function(x) sum(x==0,na.rm = T))
+mean(zero)
+
+# Number of 2 for each SNP
+two <- apply(geno,1,function(x) sum(x==2,na.rm = T))
+mean(two)
+
+# Number of 1 for each SNP
+one <- apply(geno,1,function(x) sum(x==1,na.rm = T))
+mean(one)
+
+# Number of NAs for each SNP
+nas <- apply(geno,1,function(x) sum(is.na(x)))
+mean(nas)
+
+# SNPs which have more 2 than 0
+which((2 * zero + one ) - (2*two + one)<0)
+
+df <- data.frame(SNP_0827=c(sum(geno["SNP_0827",]==0,na.rm=T),sum(geno["SNP_0827",]==1,na.rm=T),sum(geno["SNP_0827",]==2,na.rm=T),sum(is.na(geno["SNP_0827",]))),
+                 SNP_1492=c(sum(geno["SNP_1492",]==0,na.rm=T),sum(geno["SNP_1492",]==1,na.rm=T),sum(geno["SNP_1492",]==2,na.rm=T),sum(is.na(geno["SNP_1492",]))),
+                 SNP_2326=c(sum(geno["SNP_2326",]==0,na.rm=T),sum(geno["SNP_2326",]==1,na.rm=T),sum(geno["SNP_2326",]==2,na.rm=T),sum(is.na(geno["SNP_2326",]))))
+row.names(df) <- c("Nbzero","Nbone","Nbtwo","Nbnas")
+df
+```
+
+
+## Calculating the GRM
+
+```{r PreparingMatGRMall}
+# replacing integers by numeric values
+str(geno[,1:5])
+geno[,1:dim(geno)[[2]]] <- apply(geno[ , 1:dim(geno)[[2]]], 2, function(x) as.numeric(as.character(x)))
+str(geno[,1:5])
+
+mat <- as.matrix(geno)
+mat <- t(as.matrix(geno))
+str(mat)
+
+# Snps in colums and genotypes in rows
+dim(mat)
+
+mat[1:5,1:5]
+```
+
+
+### package `AGHmatrix`
+
+> Different ways to compute the matrix
+
+**a) A matrix with:**
+
+- VanRaden method (`method`)
+- no threshold for minor allele frequencies (`maf`)
+- no threshold for missing values (`thresh.missing`)
+- no imputation of missing values (`impute`)
+
+```{r CalculatingGRMalla}
+Gmat.all.a <- Gmatrix(mat,method="VanRaden", missingValue=NA,verify.posdef=T,maf=0,thresh.missing = 1,impute.method = FALSE)
+is.symmetric.matrix(Gmat.all.a)
+sum(eigen(Gmat.all.a)$values<0)
+```
+
+This matrix is not symetric and with 1 negative eigen value. 
+
+
+
+**b) A matrix with:**
+
+- VanRaden method (`method`)
+- no threshold for minor allele frequencies (`maf`)
+- no threshold for missing values (`thresh.missing`)
+- missing values are imputed with the "mean" (`impute`)
+
+```{r CalculatingGRMallb}
+# A matrix with the max of missing data accepted to each marker = 0
+Gmat.all.b <- Gmatrix(mat,method="VanRaden", missingValue=NA,verify.posdef=T,maf=0,thresh.missing = 1,impute.method = "mean")
+is.symmetric.matrix(Gmat.all.b)
+sum(eigen(Gmat.all.b)$values<0)
+```
+
+The matrix is not symetric but doesn't have negative eigen values. 
+
+**c) A matrix with:**
+
+- Yang method (`method`)
+- no threshold for minor allele frequencies (`maf`)
+- no threshold for missing values (`thresh.missing`)
+- no imputation of missing values (`impute`)
+
+```{r CalculatingGRMallc}
+# A matrix with the max of missing data accepted to each marker = 0
+Gmat.all.c <- Gmatrix(mat,method="Yang", missingValue=NA,verify.posdef=T,maf=0,thresh.missing = 1,impute.method = FALSE)
+is.symmetric.matrix(Gmat.all.c)
+sum(eigen(Gmat.all.c)$values<0)
+```
+
+This matrix is not symetric and with 6 negative eigen values. 
+
+
+**Looking at differences between matrices:**
+
+```{r CheckingMatricesEquality}
+all.equal(Gmat.all.a,Gmat.all.b)
+all.equal(Gmat.all.a,Gmat.all.c)
+all.equal(Gmat.all.c,Gmat.all.b)
+```
+
+Matrices with different imputation methods (no imputation vs imputation by the mean) are more different than matrices computed with different methods (VanRaden vs Yang). 
+
+```{r VizualizeGRMall,fig.height=12,fig.width=13, eval=F}
+heatmap(Gmat.all.a)
+heatmap(Gmat.all.b)
+heatmap(Gmat.all.c)
+```
+
+
+> <span style="color:red">Questions for Santi!</span>  
+
+
+**Comments about hte choice of the parameters to calculate the GRM:**
+
+- Method of VanRaden or Yang? (`method`) 
+
+Santiago Gonzalez-Martinez: "I prefer VanRaden, but not strong feelings here."
+
+- Which threshold for minor allele frequencies (`maf`)? (Until now, I fixed a threshold of 0 for minor allele frequencies)
+
+Santiago Gonzalez-Martinez: "It is better not to filter by MAF, as rare alleles contain also family information."
+
+- Do I need to fix a threshold on missing data (using = `thresh.missing`) ? (SNPs below this frequency value will be maintained. If `thresh.missing` equal to 1, no threshold and imputation is considered. 
+
+Santiago Gonzalez-Martinez: "I think the amount of missing data is acceptable, so better not to filter by missing data."
+
+- Which imputation method? `impute.method`: FALSE to not impute missing data, "mean" to impute the missing data by the mean, "mode" to impute the missing data my the mode.
+
+Santiago Gonzalez-Martinez: "In this case it is truly better not to impute, unless you do some imputation by gene pool separately, as adding the mean or mode genotype would dilute artificially the population structure."
+
+
+### package `synbreed`
+
+`synbreed` need alleles to be coded with "AA", "AB" and "BB" (or "A/T","G/C"...).
+
+```{r FormatMat2}
+mat.syn <- mat
+mat.syn[mat.syn ==1] <- "AB"
+mat.syn[mat.syn ==2] <- "BB"
+mat.syn[mat.syn ==0] <- "AA"
+sum(is.na(mat.syn))
+# mar.syn[is.na(mar.syn)] <- "NA"
+mat.syn[30:40,20:30]
+```
+
+Here, I computed a matrix with no imputation of missing values and the method of VanRaden (we don't have the choice in `synbreed`). 
+
+```{r ComputingGRMallsynbreed}
+Gmat.syn <- create.gpData(geno=mat.syn)
+Gmat.syn <- kin(codeGeno(Gmat.syn,verbose = T,impute =FALSE),ret=c("realized"))
+is.symmetric.matrix(Gmat.syn)
+sum(eigen(Gmat.syn)$values<0)
+```
+
+The matrix is symetric and have one negative eigen value.
+
+```{r VizualizingGRMallsynbreed,fig.width=13,fig.height=12}
+heatmap(Gmat.syn)
+plot(Gmat.syn)
+summary(Gmat.syn)
+```
+
+> Comparison between the matrices obtained with the package `AGHmatrix` and the one obtained with `synbreed`.
+
+The matrix obtained with `synbreed` is nearly equall (numerically equall) to the matrix obtained with no imputation and the method of VanRaden in `AGHmatrix`. Which is reassuring! So, for me, both packages give the same results and it doesn't matter which one we use. 
+
+```{r ComparingSynbreedAGHmatrix}
+all.equal(as.matrix(as.data.frame(Gmat.syn)),Gmat.all.a)
+all.equal(as.matrix(as.data.frame(Gmat.syn)),Gmat.all.b)
+all.equal(as.matrix(as.data.frame(Gmat.syn)),Gmat.all.c)
+```
+
+## Not positive definite matrices {#options-posdef-link}
+
+Let's use the matrix from `AGHmatrix`: `Gmat.all.a`. 
+
+```{r GmatallaSymEigen}
+is.symmetric.matrix(Gmat.all.a)
+sum(eigen(Gmat.all.a)$values<0)
+```
+
+
+**Problem:** `Gmat.all.a` is not postive definite! This is due to the numerical computation of the matrix, which sometimes give very very small eigen values instead of zeros. 
+Here for instance Ben Bolker talks about it: https://stackoverflow.com/questions/29615440/one-of-eigenvalues-of-covariance-matrix-is-negative-in-r
+
+
+I found two ways of dealing with this problem. 
+
+### First option
+
+The first option is to use buit-in functions of R, namely `forceSymetric` to force the matrix to be symmetrical and `nearPD` to find the nearest positive definite matrix. We can then check with `all.equal` if the matrices are "numerically equal" (=nearly equal).
+
+```{r FixGRMallaBuitinRfunctions}
+# Force the matrix to be symmetrical:
+Gmat.all.a.sym <- as.matrix(forceSymmetric(Gmat.all.a))
+is.symmetric.matrix(Gmat.all.a.sym) # Now, the matrix is symmetric
+
+# Now, the matrix is symmetric and numerically equal to the non-symmatrical matrix:
+all.equal(Gmat.all.a,Gmat.all.a.sym)
+
+# Find the nearest positive definite matrix:
+Gmat.all.a.pos <- as.matrix(nearPD(Gmat.all.a.sym)$mat)
+is.positive.definite(Gmat.all.a.pos)
+
+# Now, the matrix is positive definite and numerically equal to the non-positive definite matrix
+all.equal(Gmat.all.a,Gmat.all.a.pos)
+```
+
+This is the method which was used in the manuscript.
+
+### Second option{#optionsAlves}
+
+Following this blog post: https://aeolister.wordpress.com/2016/06/27/fixing-a-non-positive-definite-kinship-matrix/
+
+**Method**: "increase the sum of the eigenvalues by adding a constant quantity to all terms of the diagonal. This may be sufficient to make all eigenvalues positive and consequently the kinship matrix positive definite. A good value to add: the minimum eigenvalue."
+
+The function used is:
+
+```{r FunctionToFixGRMMatrix}
+normalize_kinmat <- function(kinmat){
+  #normalize kinship so that Kij \in [0,1]
+  tmp=kinmat - min(kinmat)
+  tmp=tmp/max(tmp)
+  tmp[1:9,1:9]
+  #fix eigenvalues to positive
+  diag(tmp)=diag(tmp)-min(eigen(tmp)$values)
+  tmp[1:9,1:9]  
+  return(tmp)
+}
+```
+
+```{r FixingGmatalla}
+Gmat.all.a.fixed <- normalize_kinmat(Gmat.all.a)
+is.symmetric.matrix(Gmat.all.a.fixed)
+sum(eigen(Gmat.all.a.fixed)$values<0)
+```
+
+The matrix is still not symmetrical but no longer has negative eigen values. So `brms` accepts it. But this method doesn't work every time, see the section `2.4.2` where it didn't work. So I did not use this method in the manuscript.
+
+
+# A GRM with only "neutral" SNPs
+
+**This is this matrix that will be used in the manuscript.**
+
+## Splitting height-associated and "neutral" SNPs 
+
+In this part, we built a genomic relationship matrix (GRM) with SNPs not associated with height (GRMn).
+
+### Looking at piMASS outputs{#comment-pimass-outputs}
+
+From [piMASS manual](https://www.haplotype.org/download/pimass-manual.pdf): 
+
+For quantitative phenotypes, the file contains:
+
+- SNP ID
+- chromosome
+- position
+- estimates of the posterior inclusion probabilities based on simple counting (`postc`)
+- **estimates of the posterior inclusion probabilities based on Rao-Blackwellization** (`postrb`)
+- the naive estimates of the posterior effect size (`beta`)
+- **Rao-Blackwellized estimates of the posterior effect size** (`betarb`)." 
+
+```{r LoadPimassOutputs, message=F}
+beta.snp <- read_delim("../../data/piMASSoutputs/height_all_sites_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+```
+
+```{r ColumnsPimassOutputs}
+head(beta.snp)
+```
+
+```{r VisualizePimassOutputs_1, fig.height=8,fig.width=12,echo=F}
+par(mfrow=c(2,2))
+hist(beta.snp$postc,100L,main="Estimates of the posterior inclusion\nprobabilities based on simple counting")
+hist(beta.snp$postrb,100L,main="Estimates of the posterior inclusion\nprobabilities based on Rao-Blackwellization")
+hist(beta.snp$beta,100L,main="Naive estimates of the\nposterior effect size")
+hist(beta.snp$betarb,100L,main="Rao-Blackwellized estimates\nof the posterior effect size")
+```
+
+
+
+> SNPs with posterior inclusion probability (based on Rao-Blackwellization) higher than 0.1.
+  
+```{r VisualizePimassOutputsHighpostrb, fig.height=6}
+hist(beta.snp$postrb[beta.snp$postrb>0.1],100L,
+     main="Estimates of the posterior inclusion probabilities based on Rao-Blackwellization\nwith only the SNPs with postrb>0.1")
+beta.snp[abs(beta.snp$postrb)>0.4|abs(beta.snp$postrb)==0.4,]
+```
+
+> <span style="color:blue">Here we can see that there are two SNPs (`SNP_4437` and `SNP_5338`) with high posterior inclusion probabilities compared to the others. </span>   
+
+
+> SNPs with Rao-Blackwellized estimate of the posterior effect size higher than 0.01.
+
+
+```{r VisualizePimassOutputsHighbetarb, fig.height=6}
+hist(beta.snp$betarb[abs(beta.snp$betarb)>0.01],100L,
+     main="Rao-Blackwellized estimates of the posterior effect size\nwith only the SNPs with betarb>0.01")
+beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
+```
+
+> <span style="color:blue">`SNP_4437` and `SNP_5338` also have much higher estimates of their posterior effect size compared to the others. </span>  
+
+
+**COMMENT:** I was a little confused about the interpretation of piMASS outputs. For me, two SNPs were associated with height (`SNP_4437` and `SNP_5338`) and the other were likely not associated with height. `piMASS` uses the BVSR methodology and according to @zhou2013polygenic, "BVSR assumes that a very small proportion of variants have an effect (so we can interpret the BVSR as assuming a small number of larger effects)". This is visually shown in the following figure from [Romain Villoutreix's presentation](http://romainvilloutreix.alwaysdata.net/romainvilloutreix/wp-content/uploads/2017/01/gwas_gemma-2017-01-17.pdf). So, I was wondering if we can really consider that the SNPs with posterior inclusion probabilities lower than 0.5 and posterior estimate effect sizes lower than 0.05 are associated to height. I was really uncomfortable with the idea of arbitrarily separating SNPs between some with a slightly higher (though still very low) posterior estimate of the effect size.
+
+```{r PngVilloutreix, echo=FALSE, fig.align="center", out.width = '30%'}
+knitr::include_graphics("bvsr_villoutreix_diapo.png")
+```
+
+
+Santiago Gonzalez-Martinez's answer: "I think it is fine. What you want to select is not the markers directly associated with height (low chance for that, except perhaps the two that are clearly outstanding) but those that "have non-zero effects" on the phenotype (probably due to LD with causal -but unkown- SNPs). Taking those with higher absolute effects on the phenotype is reasonable. At the end, the exercise is reduced to compute kinship based on the genotypes that explain the phenotype, if you compute the "perfect" kinship matrix based on all the relevant genotypes, you should get the phenotype straight. But if you just used SNPs with "partial" information, you may still recover a part of the phenotype. That's exactly what we want to test, whether this is useful or not to improve your models, beyond the use of climatice data to predict heights."
+
+Santiago Gonzalez-Martinez: "For height, we are expecting about 350 SNPs with non-zero effects, thus I would adjust the threshold to obtain around these numbers." (email 06/01/2020)
+
+@miguelPolygenicAdaptationNegative2020 showed that about 350 SNPs were associated with height in maritime pine (in a study on the same provenance trials). So we decided to find a threshold of the posterior effect size alllowing to select about 350 SNPs associated with height (at least potentially associated with height). See below.
+
+
+
+### Splitting the SNPs
+
+We are going to use the column `betarb` (=Rao-Blackwellized estimates of the posterior effect size) to select the SNPs which will no be included in the matix of "neutral" SNPs. 
+
+No missing values in this dataset. 
+
+```{r NAsInPimassOutputs}
+sapply(beta.snp, function(x) sum(is.na(x)))
+sapply(beta.snp, function(x) sum(x==-9))
+```
+
+
+```{r DifferentThresholds}
+# Threshold of 0.006
+length(beta.snp$rs[abs(beta.snp$betarb)>0.006|abs(beta.snp$betarb)==0.006])
+
+# Threshold of 0.007
+length(beta.snp$rs[abs(beta.snp$betarb)>0.007|abs(beta.snp$betarb)==0.007])
+
+# Threshold of 0.005
+length(beta.snp$rs[abs(beta.snp$betarb)>0.005|abs(beta.snp$betarb)==0.005])
+```
+
+
+> Let's take a threshold of 0.006 to select the SNPs associated to height. 
+
+```{r SplitSNPs}
+# Snps associated with height
+snps.h <- beta.snp$rs[abs(beta.snp$betarb)>0.006|abs(beta.snp$betarb)==0.006]
+length(snps.h)
+
+# Snps not associated with height ("neutral")
+snps.n <- beta.snp$rs[abs(beta.snp$betarb)<0.006]
+length(snps.n)
+```
+
+With a threshold of 0.006 for the effect size, 322 SNPs are associated to height and 4,843 are not associated to height. 
+
+
+## Genotypes for each SNP
+
+Same as in section 1 (A GRM with all SNPs):
+
+- loading files with the genotype names and the genotype of each clone for each SNP
+- format the files the SNPs in rows and the genotypes in columns.
+
+
+
+```{r  LoadFilesSection2}
+# File with the genotype names (clone names)
+geno_names <- read.delim2("../../data/ClonapinBlups523IndPiMASSJuly2019.txt", row.names=1)
+
+# File with the genotype of each clone for each SNP
+geno <- read.csv("../../data/5165snps523genotypesNA.txt", header=FALSE, row.names=1)
+```
+
+```{r FormatingFilesSection2}
+# Removing the first two columns with allele info (A,T, G or C)
+geno <- geno[,3:dim(geno)[[2]]]
+
+# genotype name for each column
+colnames(geno) <- rownames(geno_names)
+
+rm(geno_names)
+```
+
+Let's create the file `geno.n`, with genotypes of SNPs not associated with height.
+
+```{r GenotypeFile}
+geno.n <- geno[row.names(geno) %in% snps.n,]
+geno.n[1:10,1:10]
+```
+
+## Calculating the "neutral" GRM
+
+With the  package `AGHmatrix`.
+
+```{r ComputingGRMn}
+# replacing integers by numeric values
+geno.n[,1:dim(geno.n)[[2]]] <- apply(geno.n[ , 1:dim(geno.n)[[2]]], 2, function(x) as.numeric(as.character(x)))
+
+mat.n <- t(as.matrix(geno.n))
+str(mat.n)
+dim(mat.n)
+mat.n[1:14,1:14]
+
+Gmatrix.n <- Gmatrix(mat.n,method="VanRaden", missingValue = NA, verify.posdef=T)
+```
+
+```{r VisualizingGRMn, fig.height=12,fig.width=14}
+heatmap(Gmatrix.n)
+heatmap.2(as.matrix(Gmatrix.n),scale="row",col=brewer.pal(11,"RdBu"),trace="none")
+```
+
+
+## Positive definite GRM
+
+Problem: `Gmatrix.n` is not positive definite.
+
+```{r NegEigenValues}
+sum(eigen(Gmatrix.n)$values<0)
+eigen(Gmatrix.n)$values[eigen(Gmatrix.n)$values<0]
+```
+
+
+2 options to fix it, like in [section 1.5](#options-posdef-link). 
+
+
+### First option
+
+First, the matrix is not symmetrical, so let's correct that. 
+
+```{r SyGRMn}
+# GRMn
+is.symmetric.matrix(Gmatrix.n)
+Gmatrix.n.sym <- as.matrix(forceSymmetric(Gmatrix.n))
+is.symmetric.matrix(Gmatrix.n.sym)
+
+# The symmetric GRM and the non-symmetric matrices are "nearly equal".
+all.equal(Gmatrix.n,Gmatrix.n.sym)
+```
+
+But the negative eigne values are still there. Need to make the matrix positive definite (to do then the cholesky decomposition in the model.).
+
+```{r NegEigenValuesSymMatrices}
+sum(eigen(Gmatrix.n.sym)$values<0)
+eigen(Gmatrix.n.sym)$values[eigen(Gmatrix.n.sym)$values<0]
+```
+
+```{r PosGRMn}
+is.positive.definite(Gmatrix.n.sym)
+Gmatrix.n.pos <- as.matrix(nearPD(Gmatrix.n)$mat)
+is.positive.definite(Gmatrix.n.pos)
+
+all.equal(Gmatrix.n,Gmatrix.n.pos)
+```
+
+`Gmatrix.n` and `Gmatrix.n.pos` are nearly equal.
+
+Let's save the matrix
+
+```{r SaveGRMn, eval=F}
+# saveRDS(Gmatrix.n.pos, file="../../data/GRMs/GRMVanRaden.RDS")
+```
+
+
+
+### Second option
+
+See description second option [here](#optionsAlves)
+
+```{r NormalizeGRMnAlves}
+Gmat.n.alves <- normalize_kinmat(Gmatrix.n.sym)
+is.symmetric.matrix(Gmat.n.alves)
+is.positive.definite(Gmat.n.alves)
+sum(eigen(Gmat.n.alves)$values<0)
+```
+
+
+
+# Comparing GRM with all SNPs and "neutral" GRM
+
+```{r ComparingGRMallGRMn}
+Gmat.all.a.pos[1:5,1:5]
+Gmatrix.n.pos[1:5,1:5]
+all.equal(Gmat.all.a.pos,Gmatrix.n.pos)
+```
+
+`r knitr::opts_chunk$set(eval = F)`
+
+
+
+# References
+
