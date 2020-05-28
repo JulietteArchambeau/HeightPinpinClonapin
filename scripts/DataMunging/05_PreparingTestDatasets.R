@@ -59,23 +59,23 @@ snp.counts <- readRDS(file="data/CountPEAs.RDS")
 test <- merge(test,snp.counts,by="clon")
 
 # Region-specific PEAs
-test$count_all_350 <- NA 
-test$count_all_350[test$site=="asturias"|test$site=="portugal"] <- test$count_ibatl_350[test$site=="asturias"|test$site=="portugal"]
-test$count_all_350[test$site=="caceres"|test$site=="madrid"] <- test$count_med_350[test$site=="madrid"|test$site=="caceres"]
-test$count_all_350[test$site=="bordeaux"] <- test$count_fratl_350[test$site=="bordeaux"]
+test$rPEA <- NA 
+test$rPEA[test$site=="asturias"|test$site=="portugal"] <- test$count_ibatl_350[test$site=="asturias"|test$site=="portugal"]
+test$rPEA[test$site=="caceres"|test$site=="madrid"] <- test$count_med_350[test$site=="madrid"|test$site=="caceres"]
+test$rPEA[test$site=="bordeaux"] <- test$count_fratl_350[test$site=="bordeaux"]
 
 train <- merge(train,snp.counts,by="clon")
-train$count_all_350 <- NA 
-train$count_all_350[train$site=="asturias"|train$site=="portugal"] <- train$count_ibatl_350[train$site=="asturias"|train$site=="portugal"]
-train$count_all_350[train$site=="caceres"|train$site=="madrid"] <- train$count_med_350[train$site=="madrid"|train$site=="caceres"]
-train$count_all_350[train$site=="bordeaux"] <- train$count_fratl_350[train$site=="bordeaux"]
+train$rPEA <- NA 
+train$rPEA[train$site=="asturias"|train$site=="portugal"] <- train$count_ibatl_350[train$site=="asturias"|train$site=="portugal"]
+train$rPEA[train$site=="caceres"|train$site=="madrid"] <- train$count_med_350[train$site=="madrid"|train$site=="caceres"]
+train$rPEA[train$site=="bordeaux"] <- train$count_fratl_350[train$site=="bordeaux"]
 
 rm(snp.counts)
 
-test$count_all_350.sc <-  (test$count_all_350 - mean(train$count_all_350)) / sd(train$count_all_350)
+test$rPEA.sc <-  (test$rPEA - mean(train$rPEA)) / sd(train$rPEA)
 
 # Global PEAs
-test$count_all.sc <- (test$count_all - mean(train$count_all)) / sd(train$count_all)
+test$gPEA.sc <- (test$count_all_350 - mean(train$count_all_350)) / sd(train$count_all_350)
 
 
 # Site climatic variables
@@ -91,7 +91,7 @@ test$ppet_max_1y_site.sc <- (test$ppet_max_1y_site - mean(train$ppet_max_1y_site
 test$bio14_prov.sc <- (test$bio14_prov - mean(train$bio14_prov)) / sd(train$bio14_prov)
 test$bio5_prov.sc <- (test$bio5_prov - mean(train$bio5_prov)) / sd(train$bio5_prov)
 
-# saveRDS(test, file="data/TestP1prepared.RDS")
+#saveRDS(test, file="data/TestP1prepared.RDS")
 
 
 
@@ -143,23 +143,23 @@ snp.counts <- readRDS(file="data/CountPEAs.RDS")
 test <- merge(test,snp.counts,by="clon")
 
 # Region-specific PEAs
-test$count_all_350 <- NA 
-test$count_all_350[test$site=="asturias"|test$site=="portugal"] <- test$count_ibatl_350[test$site=="asturias"|test$site=="portugal"]
-test$count_all_350[test$site=="caceres"|test$site=="madrid"] <- test$count_med_350[test$site=="madrid"|test$site=="caceres"]
-test$count_all_350[test$site=="bordeaux"] <- test$count_fratl_350[test$site=="bordeaux"]
+test$rPEA <- NA 
+test$rPEA[test$site=="asturias"|test$site=="portugal"] <- test$count_ibatl_350[test$site=="asturias"|test$site=="portugal"]
+test$rPEA[test$site=="caceres"|test$site=="madrid"] <- test$count_med_350[test$site=="madrid"|test$site=="caceres"]
+test$rPEA[test$site=="bordeaux"] <- test$count_fratl_350[test$site=="bordeaux"]
 
 train <- merge(train,snp.counts,by="clon")
-train$count_all_350 <- NA 
-train$count_all_350[train$site=="asturias"|train$site=="portugal"] <- train$count_ibatl_350[train$site=="asturias"|train$site=="portugal"]
-train$count_all_350[train$site=="caceres"|train$site=="madrid"] <- train$count_med_350[train$site=="madrid"|train$site=="caceres"]
-train$count_all_350[train$site=="bordeaux"] <- train$count_fratl_350[train$site=="bordeaux"]
+train$rPEA <- NA 
+train$rPEA[train$site=="asturias"|train$site=="portugal"] <- train$count_ibatl_350[train$site=="asturias"|train$site=="portugal"]
+train$rPEA[train$site=="caceres"|train$site=="madrid"] <- train$count_med_350[train$site=="madrid"|train$site=="caceres"]
+train$rPEA[train$site=="bordeaux"] <- train$count_fratl_350[train$site=="bordeaux"]
 
 rm(snp.counts)
 
-test$count_all_350.sc <-  (test$count_all_350 - mean(train$count_all_350)) / sd(train$count_all_350)
+test$rPEA.sc <-  (test$rPEA - mean(train$rPEA)) / sd(train$rPEA)
 
 # Global PEAs
-test$count_all.sc <- (test$count_all - mean(train$count_all)) / sd(train$count_all)
+test$gPEA.sc <- (test$count_all_350 - mean(train$count_all_350)) / sd(train$count_all_350)
 
 
 # Site climatic variables
@@ -229,24 +229,24 @@ test <- merge(test,snp.counts,by="clon")
 
 
 # Region-specific PEAs
-test$count_all_350 <- NA 
-test$count_all_350[test$site=="asturias"|test$site=="portugal"] <- test$count_ibatl_350[test$site=="asturias"|test$site=="portugal"]
-test$count_all_350[test$site=="caceres"|test$site=="madrid"] <- test$count_med_350[test$site=="madrid"|test$site=="caceres"]
-test$count_all_350[test$site=="bordeaux"] <- test$count_fratl_350[test$site=="bordeaux"]
+test$rPEA <- NA 
+test$rPEA[test$site=="asturias"|test$site=="portugal"] <- test$count_ibatl_350[test$site=="asturias"|test$site=="portugal"]
+test$rPEA[test$site=="caceres"|test$site=="madrid"] <- test$count_med_350[test$site=="madrid"|test$site=="caceres"]
+test$rPEA[test$site=="bordeaux"] <- test$count_fratl_350[test$site=="bordeaux"]
 
 train <- merge(train,snp.counts,by="clon")
-train$count_all_350 <- NA 
-train$count_all_350[train$site=="asturias"|train$site=="portugal"] <- train$count_ibatl_350[train$site=="asturias"|train$site=="portugal"]
-train$count_all_350[train$site=="caceres"|train$site=="madrid"] <- train$count_med_350[train$site=="madrid"|train$site=="caceres"]
-train$count_all_350[train$site=="bordeaux"] <- train$count_fratl_350[train$site=="bordeaux"]
+train$rPEA <- NA 
+train$rPEA[train$site=="asturias"|train$site=="portugal"] <- train$count_ibatl_350[train$site=="asturias"|train$site=="portugal"]
+train$rPEA[train$site=="caceres"|train$site=="madrid"] <- train$count_med_350[train$site=="madrid"|train$site=="caceres"]
+train$rPEA[train$site=="bordeaux"] <- train$count_fratl_350[train$site=="bordeaux"]
 
 rm(snp.counts)
 
-test$count_all_350.sc <-  (test$count_all_350 - mean(train$count_all_350)) / sd(train$count_all_350)
+test$rPEA.sc <-  (test$rPEA - mean(train$rPEA)) / sd(train$rPEA)
 
 
 # Global PEAs
-test$count_all.sc <- (test$count_all - mean(train$count_all)) / sd(train$count_all)
+test$gPEA.sc <- (test$count_all_350 - mean(train$count_all_350)) / sd(train$count_all_350)
 
 
 # Site climatic variables

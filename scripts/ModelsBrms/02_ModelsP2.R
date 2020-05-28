@@ -158,14 +158,6 @@ mod7 <- brm(log(height) ~  age.sc + I(age.sc^2) +
              data = data, family = "gaussian",
              control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 saveRDS(mod7, file="outputs/models/P2/MOD7.rds")
-# 
-# Warning messages:
-#   1: There were 2 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
-# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
-# 2: There were 9 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
-# http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-# 3: Examine the pairs() plot to diagnose sampling problems
-
 
 
 
@@ -246,12 +238,13 @@ mod11 <- brm(log(height) ~  age.sc + I(age.sc^2) +
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 saveRDS(mod11, file="outputs/models/P2/MOD11.rds")
 
+
 # Warning messages:
-#   1: There were 1 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+#   1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
+# 2: There were 1151 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-# 2: Examine the pairs() plot to diagnose sampling problems
-
-
+# 3: Examine the pairs() plot to diagnose sampling problems
 
 
 #****************************************************************************************************************************** ####
@@ -267,9 +260,10 @@ mod12 <- brm(log(height) ~  age.sc + I(age.sc^2) +
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 saveRDS(mod12, file="outputs/models/P2/MOD12.rds")
 
+
 # Warning messages:
-#   1: There were 1 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+#   1: There were 3 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
+# 2: There were 17 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-# 2: Examine the pairs() plot to diagnose sampling problems
-
-
+# 3: Examine the pairs() plot to diagnose sampling problems
