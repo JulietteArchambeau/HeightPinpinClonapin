@@ -14,7 +14,7 @@ library(brms)
 library(gdata)
 
 # Data partition used to fit the models:
-part <- "P2"
+part <- "P3"
 
 # Path
 path= paste0("outputs/models/",part,"/")
@@ -115,24 +115,20 @@ tab <- as.matrix(tab)
 lowerTriangle(tab) <- NA
 tab <- as.data.frame(tab)
 
+colnames(tab) <- paste0("M",str_sub(colnames(tab),4,-1))
+rownames(tab) <- paste0("M",str_sub(rownames(tab),4,-1))
 
-
-if (grepl("P1",path)==TRUE){
-colnames(tab) <- paste0("M",2:length(myloos))
-rownames(tab) <- paste0("M",1:(length(myloos)-1))
-
-} else if (grepl("P2",path)==TRUE){
-
-colnames(tab) <- c("M7","M8","M2")
-rownames(tab) <- c("M1","M7","M8")
-}
+tab
+tab <- tab[!(rownames(tab)=="M13"),!(colnames(tab)=="M13")] 
 
 print(xtable(tab, type = "latex",digits=2), file = paste0("tables/loos/",part,"_loo_pairwise_compare.tex"))
 
 
 
 
-# 2) R2 ####
+# 2) ALL SITES ####
+
+## a) R2 ####
 
 # Variance explained on the same data (train data set)
 # 2 values are given: the mean of which is used as the measure of central tendency and the standard deviation as the measure of variability
@@ -156,13 +152,14 @@ for (i in 1:length(models)){
                                               round(R2all[[2]], 3),"]")  # R2 of fixed effects
 }
 
+# If I want to compute the sdt error of the mean, I don't know how to do with R2 as there is one value per iterations (post-warmup samples)
+# SO maybe it is not relavant to compute the sdt error of the mean, let's keep the sdt deviation.
+# R2all  <- brms::bayes_R2(models[[i]],re.form=NULL,summary=F)
+# paste0(round(mean(R2all), 3)," [",round(sd(R2all)/sqrt(length(R2all)), 5),"]")
 
 
 
-
-# 3) Residuals and predictive errors #####
-
-  # a) In all sites ####
+# b) Residuals and predictive errors #####
 
 # Comments
 # predictive_error uses the method "posterior_predict", so predict with considering sigma
@@ -178,6 +175,10 @@ for(m in 1:length(models)){
   # Mean and the standard error of the mean
   df[names(models[m]),"PE_Train"] <- paste0(round(mean(err_all),3), " [", 
                                              round((sd(err_all)/sqrt(length(err_all))),3),"]")
+  
+  # Mean and the standard deviation
+  df[names(models[m]),"PEsd_Train"] <- paste0(round(mean(err_all),3), " [", 
+                                              round((sd(err_all)),3),"]")
   
   # TRAIN - Residuals
   ###################"
@@ -195,6 +196,10 @@ for(m in 1:length(models)){
   df[names(models[m]),"PE_Test"] <- paste0(round(mean(err_all),3), " [", 
                                              round((sd(err_all)/sqrt(length(err_all))),3),"]")
   
+  # Mean and the standard deviation
+  df[names(models[m]),"PEsd_Test"] <- paste0(round(mean(err_all),3), " [", 
+                                             round((sd(err_all)),3),"]")
+  
   # TEST - Residuals
   ##################"
   err_all <- residuals(models[[m]],newdata = test,allow_new_levels=T,method="pp_expect",summary=F)  %>% t() %>%  rowMeans() %>% abs()
@@ -207,8 +212,6 @@ for(m in 1:length(models)){
 
 
 saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf.rds"))
-
-
 
 
 
@@ -230,7 +233,11 @@ print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",par
 
 
 
-  # b) In each site ####
+# 3) SITE-SPECIFIC ####
+
+
+# a) Residuals and predictive errors #####
+
 df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf.rds"))
 
 
@@ -276,16 +283,80 @@ for(m in 1:length(models)){
     df[names(models[m]),paste0("RES_Test_",i)] <- paste0(round(mean(res_test_site),3), " [", 
                                                          round((sd(res_test_site)/sqrt(length(res_test_site))),3),"]")
     
+    # Mean and the standard deviation
+    df[names(models[m]),paste0("PEsd_Train_",i)] <- paste0(round(mean(pe_site),3), " [", 
+                                                         round((sd(pe_site)),3),"]")
+    
+    
+    df[names(models[m]),paste0("PEsd_Test_",i)] <- paste0(round(mean(pe_test_site),3), " [", 
+                                                        round((sd(pe_test_site)),3),"]")
+    
   }
   
 }
-df <- df[,1:36]
+#df <- df[,1:36]
 saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific.rds"))
 #rownames(df)[rownames(df) == "MOD12"] <- "MOD8"
 #rownames(df)[rownames(df) == "MOD11"] <- "MOD7"
 df
 
-# c) In each provenance (test dataset of P2 and P3) ####
+
+
+# b) R2  ####
+
+# Variance explained on new observations or new provenances (test data set)
+
+for (i in 1:length(models)){
+  if(names(models[i])=="MOD13") next
+  
+  for(s in unique(models[[i]]$data$site)){
+    
+    R2  <- brms::bayes_R2(models[[i]],re.form=NULL,newdata=test[test$site==s,],allow_new_levels=T)
+    df[names(models[i]),paste0("R2_Test_",s)] <- paste0(round(R2[[1]], 3)," [", # mean
+                                                        round(R2[[2]], 3),"]") # standard deviation
+  }
+}
+
+saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_R2.rds"))
+
+
+# c) PE2 site specific ####
+
+square <- function(x) (x*x)
+
+for(m in 1:length(models)){
+  
+  # TRAIN - Predictive error
+  ##########################"
+  train$pe <- predictive_error(models[[m]])  %>% t() %>%  rowMeans() %>% square()
+  
+  # TEST - Predictive error
+  #########################"
+  test$pe <- predictive_error(models[[m]],newdata = test,allow_new_levels=T)  %>% t() %>%   rowMeans() %>% square()
+  
+  
+  for(i in unique(models[[m]]$data$site)){
+    pe_site <- train$pe[train$site==i]
+    pe_test_site <- test$pe[test$site==i]
+    
+    # Mean and the standard error of the mean
+    df[names(models[m]),paste0("PE2_Train_",i)] <- paste0(round(mean(pe_site),3), " [", 
+                                                          round((sd(pe_site)/sqrt(length(pe_site))),3),"]")
+    
+    df[names(models[m]),paste0("PE2_Test_",i)] <- paste0(round(mean(pe_test_site),3), " [", 
+                                                         round((sd(pe_test_site)/sqrt(length(pe_test_site))),3),"]")
+    
+  }
+  
+}
+saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_R2_PE2.rds"))
+
+
+
+# 4) PROV-SPECIFIC ####
+
+# a) Residuals and predictive errors #####
+
 if (grepl("P2",path)==TRUE|grepl("P3",path)==TRUE){
 for(m in 1:length(models)){
   
@@ -308,6 +379,11 @@ for(m in 1:length(models)){
     
     df[names(models[m]),paste0("RES_Test_",i)] <- paste0(round(mean(res_test_prov),3), " [", 
                                                          round((sd(res_test_prov)/sqrt(length(res_test_prov))),3),"]")
+    
+    
+    # Mean and the standard deviation
+    df[names(models[m]),paste0("PEsd_Test_",i)] <- paste0(round(mean(pe_test_prov),3), " [", 
+                                                        round((sd(pe_test_prov)),3),"]")
     }
 }
   
@@ -316,10 +392,30 @@ for(m in 1:length(models)){
 
 
 
+# b) R2 ####
+
+if (grepl("P2",path)==TRUE|grepl("P3",path)==TRUE){
+df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecificProvSpecific.rds"))
+
+for (i in 1:length(models)){
+  if(names(models[i])=="MOD13") next
+  
+  for(p in unique(test$prov)){
+    
+    R2  <- brms::bayes_R2(models[[i]],re.form=NULL,newdata=test[test$prov==p,],allow_new_levels=T)
+    df[names(models[i]),paste0("R2_Test_",p)] <- paste0(round(R2[[1]], 3)," [", # mean
+                                                        round(R2[[2]], 3),"]")  # standard deviation
+  }
+}
+
+saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecificProvSpecific_R2.rds"))
+
+}
+
 # >>> latex tables for the manuscript ####
 
 
-# Site specific
+# Site specific PE [se] 
 df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific.rds"))
 df$Models <- paste0("M",str_sub(row.names(df),4,-1))
 df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
@@ -331,6 +427,17 @@ df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")
                 PE_Test_asturias)
 print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_SiteSpecific.tex"), include.rownames=FALSE)
 
+# Site specific PE [se] + R2 [sd]
+df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_R2.rds"))
+df$Models <- paste0("M",str_sub(row.names(df),4,-1))
+df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
+  dplyr::select(Models,
+                PE_Test_portugal,R2_Test_portugal,
+                PE_Test_madrid,R2_Test_madrid,
+                PE_Test_caceres,R2_Test_caceres,
+                PE_Test_bordeaux,R2_Test_bordeaux,
+                PE_Test_asturias,R2_Test_asturias)
+print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_SiteSpecific_R2.tex"), include.rownames=FALSE)
 
 
 
@@ -349,7 +456,7 @@ df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")
   dplyr::select(Models,
                 PE_Test_asturias,PE_Test_bordeaux,PE_Test_caceres,PE_Test_madrid,PE_Test_portugal)
 
-# P2 partition - Prov specific
+# P2 partition - Prov specific PE [se]
 df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecificProvSpecific.rds"))
 df$Models <- paste0("M",str_sub(row.names(df),4,-1))
 df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
@@ -361,6 +468,20 @@ df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")
                 PE_Test_QUA,
                 PE_Test_SAC)
 print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_ProvSpecific.tex"), include.rownames=FALSE)
+
+
+# P2 partition - Prov specific PE [se] ++ R2 [sd]
+df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecificProvSpecific_R2.rds"))
+df$Models <- paste0("M",str_sub(row.names(df),4,-1))
+df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
+  dplyr::select(Models,
+                PE_Test_CAD,R2_Test_CAD,
+                PE_Test_COC,R2_Test_COC,
+                PE_Test_MIM,R2_Test_MIM,
+                PE_Test_PLE,R2_Test_PLE,
+                PE_Test_QUA,R2_Test_QUA,
+                PE_Test_SAC,R2_Test_SAC)
+print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_ProvSpecific_R2.tex"), include.rownames=FALSE)
 
 
 # P3 partition - Prov specific

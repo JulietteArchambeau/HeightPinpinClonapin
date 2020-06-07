@@ -88,7 +88,7 @@ probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
 
 
 ```{r LoadDATA}
-data <- readRDS(file="../../data/datatrain_pheno-clim-soil_20012020_Sample4_28provs.RDS")
+data <- readRDS(file="../../data/TrainP2.RDS")
 ```
 
 
@@ -2275,7 +2275,7 @@ mod %>%  mcmc_intervals(regex_pars = "^r_site.*bio14_prov.sc\\]",
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
 df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
-  filter(str_detect(term, "^r_site.*all.sc\\]")) %>% 
+  filter(str_detect(term, "^r_site.*PEA.sc\\]")) %>% 
   rename_all(str_to_title) %>% 
   dplyr::rename("Mean"=Estimate) %>% 
   mutate(Term = recode_factor(Term, 'r_site[portugal,gPEA.sc]' = '$\\beta_{gpea,Portugal}$',
@@ -2294,7 +2294,7 @@ par <-paste(paste0("'r_site[",site,",gPEA.sc]'"))
 par2 <-paste(paste0("'beta_gPEA_",str_to_title(site),"'")) 
 tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
-mod %>%  mcmc_intervals(regex_pars = "^r_site.*all.sc\\]",
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
   scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Portugal}$")),
@@ -2303,6 +2303,7 @@ mod %>%  mcmc_intervals(regex_pars = "^r_site.*all.sc\\]",
                             'r_site[madrid,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Madrid}$")),
                             'r_site[caceres,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Caceres}$")))) 
 ```
+
 
 
 # **MODEL M8**
@@ -2754,7 +2755,7 @@ mod %>%  mcmc_intervals(regex_pars = "^r_site.*bio14_prov.sc\\]",
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
 df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
-  filter(str_detect(term, "^r_site.*350.sc\\]")) %>% 
+  filter(str_detect(term, "^r_site.*PEA.sc\\]")) %>% 
   rename_all(str_to_title) %>% 
   dplyr::rename("Mean"=Estimate) %>% 
   mutate(Term = recode_factor(Term, 
@@ -2774,7 +2775,7 @@ par <-paste(paste0("'r_site[",site,",rPEA.sc]'"))
 par2 <-paste(paste0("'beta_rPEA_",str_to_title(site),"'")) 
 tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
-mod %>%  mcmc_intervals(regex_pars = "^r_site.*350.sc\\]",
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
   scale_y_discrete(labels=c('r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Portugal}$")),
@@ -3738,7 +3739,7 @@ p
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
 df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
-  filter(str_detect(term, "^r_site.*all.sc\\]")) %>% 
+  filter(str_detect(term, "^r_site.*PEA.sc\\]")) %>% 
   rename_all(str_to_title) %>% 
   dplyr::rename("Mean"=Estimate) %>% 
   mutate(Term = recode_factor(Term, 
@@ -3758,7 +3759,7 @@ df %>% knitr::kable(digits = 3 ,format = "markdown")
 # par2 <-paste(paste0("'beta_gPEA_",str_to_title(site),"'")) 
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
-mod %>%  mcmc_intervals(regex_pars = "^r_site.*all.sc\\]",
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
   scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Portugal}$")),
@@ -4068,7 +4069,7 @@ p
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
 df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
-  filter(str_detect(term, "^r_site.*350.sc\\]")) %>% 
+  filter(str_detect(term, "^r_site.*PEA.sc\\]")) %>% 
   rename_all(str_to_title) %>%  
   dplyr::rename("Mean"=Estimate) %>% 
   mutate(Term = recode_factor(Term, 
@@ -4088,7 +4089,7 @@ df %>% knitr::kable(digits = 3 ,format = "markdown")
 # par2 <-paste(paste0("'beta_rPEA_",str_to_title(site),"'")) 
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
-mod %>%  mcmc_intervals(regex_pars = "^r_site.*all_350.sc\\]",
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=0.95,prob_outer = 1,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
   scale_y_discrete(labels=c('r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Portugal}$")),
@@ -4157,3 +4158,5 @@ figs.beta
 ggsave(figs.beta, file="../../figs/SuppInfo/M12_rpeaIntercepts_P2.png",width = 16,height=12)  
 ```
 
+
+`r knitr::opts_chunk$set(eval = F)`
