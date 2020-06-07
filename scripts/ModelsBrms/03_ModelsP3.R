@@ -126,8 +126,11 @@ mod8 <- brm(log(height) ~  age.sc + I(age.sc^2) +
             data = data, family = "gaussian",
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 saveRDS(mod8, file="outputs/models/P3/MOD8.rds")
-
-
+# 
+# Warning messages:
+#   1: There were 1 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+# http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+# 2: Examine the pairs() plot to diagnose sampling problems
 
 
 #****************************************************************************************************************************** ####
@@ -185,7 +188,16 @@ mod11 <- brm(log(height) ~  age.sc + I(age.sc^2) +
              control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 saveRDS(mod11, file="outputs/models/P3/MOD11.rds")
 
-
+# Warning messages:
+#   1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
+# 2: There were 150 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+# http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+# 3: Examine the pairs() plot to diagnose sampling problems
+# 
+# 4: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+# Running the chains for more iterations may help. See
+# http://mc-stan.org/misc/warnings.html#bulk-ess 
 
 #****************************************************************************************************************************** ####
 #          MODEL 12                                                                                                             ####
@@ -199,3 +211,8 @@ mod12 <- brm(log(height) ~  age.sc + I(age.sc^2) +
              data = data, family = "gaussian",
              control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 saveRDS(mod12, file="outputs/models/P3/MOD12.rds")
+# 
+# Warning messages:
+#   1: There were 46 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+# http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+# 2: Examine the pairs() plot to diagnose sampling problems
