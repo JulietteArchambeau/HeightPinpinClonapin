@@ -113,25 +113,6 @@ saveRDS(mod1, file="outputs/models/P3/MOD1.rds")
 
 
 
-#****************************************************************************************************************************** ####
-#           MODEL 8                                                                                                             ####
-
-mod8 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
-              (1|mm(Q1,Q2,Q3,Q4,Q5,Q6, weights = cbind(prop_Q1,prop_Q2,prop_Q3,prop_Q4,prop_Q5,prop_Q6))) +
-              (bio5_prov.sc + bio14_prov.sc + rPEA.sc|site) + (1|block), 
-            
-            prior = c(prior(normal(0, 1), "b"),
-                      prior(normal(0, 5), "Intercept")),
-            
-            data = data, family = "gaussian",
-            control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
-saveRDS(mod8, file="outputs/models/P3/MOD8.rds")
-# 
-# Warning messages:
-#   1: There were 1 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
-# http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-# 2: Examine the pairs() plot to diagnose sampling problems
-
 
 #****************************************************************************************************************************** ####
 #           MODEL 2                                                                                                             ####
@@ -174,6 +155,61 @@ saveRDS(mod7, file="outputs/models/P3/MOD7.rds")
 # 2: Examine the pairs() plot to diagnose sampling problems
 
 
+#****************************************************************************************************************************** ####
+#           MODEL 8                                                                                                             ####
+
+mod8 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
+              (1|mm(Q1,Q2,Q3,Q4,Q5,Q6, weights = cbind(prop_Q1,prop_Q2,prop_Q3,prop_Q4,prop_Q5,prop_Q6))) +
+              (bio5_prov.sc + bio14_prov.sc + rPEA.sc|site) + (1|block), 
+            
+            prior = c(prior(normal(0, 1), "b"),
+                      prior(normal(0, 5), "Intercept")),
+            
+            data = data, family = "gaussian",
+            control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
+saveRDS(mod8, file="outputs/models/P3/MOD8.rds")
+# 
+# Warning messages:
+#   1: There were 1 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+# http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+# 2: Examine the pairs() plot to diagnose sampling problems
+
+
+#****************************************************************************************************************************** ####
+#           MODEL 9                                                                                                             ####
+
+mod9 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
+              (1|mm(Q1,Q2,Q3,Q4,Q5,Q6, weights = cbind(prop_Q1,prop_Q2,prop_Q3,prop_Q4,prop_Q5,prop_Q6))) +
+              (1|site/block), 
+            
+            prior = c(prior(normal(0, 1), "b"),
+                      prior(normal(0, 5), "Intercept")),
+            
+            data = data, family = "gaussian",
+            control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
+saveRDS(mod9, file="outputs/models/P3/MOD9.rds")
+
+
+# No warnings!
+
+
+#****************************************************************************************************************************** ####
+#          MODEL 10                                                                                                             ####
+
+mod10 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
+               (bio5_prov.sc + bio14_prov.sc|site) + (1|block), 
+             
+             prior = c(prior(normal(0, 1), "b"),
+                       prior(normal(0, 5), "Intercept")),
+             
+             data = data, family = "gaussian",
+             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
+saveRDS(mod10, file="outputs/models/P3/MOD10.rds")
+# 
+# Warning messages:
+#   1: There were 8 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+# http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
+# 2: Examine the pairs() plot to diagnose sampling problems
 
 #****************************************************************************************************************************** ####
 #          MODEL 11                                                                                                             ####
