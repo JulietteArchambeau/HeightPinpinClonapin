@@ -277,8 +277,8 @@ df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\bet
 bind_rows(df,df2) %>% 
   knitr::kable(digits = 3 ,format = "markdown")
 
-# tab <- bind_rows(df,df2)
-# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M0_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+tab <- bind_rows(df,df2)
+print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M0_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -621,8 +621,8 @@ df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\bet
 bind_rows(df,df2) %>% 
   knitr::kable(digits = 3 ,format = "markdown")
 
-# tab <- bind_rows(df,df2)
-# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+tab <- bind_rows(df,df2)
+print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -1127,8 +1127,8 @@ df2 <- df2 %>% mutate(Parameter = recode_factor(rownames(df2),'b_age.sc'="$\\bet
 bind_rows(df,df2) %>% 
   knitr::kable(digits = 3 ,format = "markdown")
 
-# tab <- bind_rows(df,df2)
-# print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M2_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+tab <- bind_rows(df,df2)
+print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M2_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
