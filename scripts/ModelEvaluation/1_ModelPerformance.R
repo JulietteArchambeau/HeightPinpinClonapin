@@ -14,7 +14,7 @@ library(brms)
 library(gdata)
 
 # Data partition used to fit the models:
-part <- "P3"
+part <- "P3" # choose between P1, P2 and P3
 
 # Path
 path= paste0("outputs/models/",part,"/")
@@ -31,7 +31,7 @@ names(models) <- str_sub(myFiles,0,-5)
 
 
 
-# test dataset
+# Test dataset (not used to fit the model)
 
 if (grepl("P1",path)==TRUE){
   test <- readRDS(file="data/TestP1prepared.RDS")
@@ -428,6 +428,7 @@ df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")
 print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_SiteSpecific.tex"), include.rownames=FALSE)
 
 # Site specific PE [se] + R2 [sd]
+# => in the Supplementary information
 df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_R2.rds"))
 df$Models <- paste0("M",str_sub(row.names(df),4,-1))
 df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
@@ -439,22 +440,6 @@ df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")
                 PE_Test_asturias,R2_Test_asturias)
 print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_SiteSpecific_R2.tex"), include.rownames=FALSE)
 
-
-
-df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
-  dplyr::select(Models,
-                ELPD=ELPD,
-                R2all_Train,
-                R2fix_Train,
-                PE_Train,
-                RES_Train,
-                R2all_Test,
-                PE_Test,
-                RES_Test)
-
-df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
-  dplyr::select(Models,
-                PE_Test_asturias,PE_Test_bordeaux,PE_Test_caceres,PE_Test_madrid,PE_Test_portugal)
 
 # P2 partition - Prov specific PE [se]
 df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecificProvSpecific.rds"))
@@ -470,7 +455,8 @@ df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")
 print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_ProvSpecific.tex"), include.rownames=FALSE)
 
 
-# P2 partition - Prov specific PE [se] ++ R2 [sd]
+# P2 partition - Prov specific PE [se] + R2 [sd]
+# => in the Supplementary information
 df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecificProvSpecific_R2.rds"))
 df$Models <- paste0("M",str_sub(row.names(df),4,-1))
 df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
@@ -496,3 +482,19 @@ df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")
                 PE_Test_OLO,
                 PE_Test_LAM)
 print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_ProvSpecifi.tex"), include.rownames=FALSE)
+
+
+
+# P3 partition - Prov specific PE [se] + R2 [sd]
+# => in the Supplementary information
+df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecificProvSpecific_R2.rds"))
+df$Models <- paste0("M",str_sub(row.names(df),4,-1))
+df <- df %>% mutate(ELPD=paste0(round(elpd_loo,0)," [",round(se_elpd_loo,0),"]")) %>% 
+  dplyr::select(Models,
+                PE_Test_TAM,R2_Test_TAM,
+                PE_Test_SEG,R2_Test_SEG,
+                PE_Test_PIA,R2_Test_PIA,
+                PE_Test_ORI,R2_Test_ORI,
+                PE_Test_OLO,R2_Test_OLO,
+                PE_Test_LAM,R2_Test_LAM)
+print(xtable(df, type = "latex",digits=0), file = paste0("tables/ModelPerf/",part,"_PerfModel_ProvSpecific_R2.tex"), include.rownames=FALSE)

@@ -18,14 +18,12 @@ library(brms)
 library(gdata)
 
 # my palette
-if (part=="P1"|part=="P2")  mypalette <- c("#D73027", "#F46D43", "#FDAE61" ,"#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1", "#4575B4")
-if (part=="P3") mypalette <- c("#D73027", "#F46D43", "#FDAE61" ,"#A6DBA0" ,"#5AAE61", "#74ADD1", "#4575B4")
+mypalette <- c("#D73027", "#F46D43", "#FDAE61" ,"#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1", "#4575B4")
   
 # Data partition used to fit the models:
 part <- "P3"
 
-if (part=="P1"|part=="P2") list.models <- c(paste0("M",c(0:2,7:12)))
-if (part=="P3") list.models <- c(paste0("M",c(0:2,7:8,11:12)))
+list.models <- c(paste0("M",c(0:2,7:12)))
 
 # Path
 path= paste0("outputs/models/",part,"/")
@@ -99,7 +97,7 @@ df
 df$Models <- paste0("M",str_sub(df$Models,4,-1))
 df$Sites <- str_to_title(df$Sites)
 
-#saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_R2_PE_GGplotTable.rds"))
+saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_R2_PE_GGplotTable.rds"))
 df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_R2_PE_GGplotTable.rds"))
 df <- df[df$Models %in% list.models, ]
 
