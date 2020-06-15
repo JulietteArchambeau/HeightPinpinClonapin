@@ -1,0 +1,440 @@
+---
+title: "Broad-sense heritability estimates"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width = 5,fig.height = 4,cache=TRUE)
+options(width = 300)
+library(knitr)
+library(broom)
+library(latex2exp)
+library(cowplot)
+library(ggplot2)
+library(ggpubr)
+library(stringi)
+library(tidybayes)
+library(dplyr)
+library(bayesplot)
+color_scheme_set("green")
+library(devtools)
+library(xtable)
+library(ggridges)
+library(rethinking)
+library(tidyverse)
+library(tibble)
+library(brms)
+```
+
+In this document, we calculate the broad-sense heritability $H^{2}$ based on models M1 and M5, such as:
+
+$$H^{2} = \frac{Var_{genotype}}{Var_{genotype} + Var_{residual}}$$
+
+<!-- Functions used -->
+
+```{r FuntionsUsed}
+source("../../scripts/Functions/vir_lite.R")
+square <- function(x) (x*x)
+
+# Parameters of the funtion vir_lite
+ds=0.7
+```
+
+
+The credible intervals used are 95% CI.
+
+```{r CredibleIntervalsUsed}
+prob=0.95
+probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
+```
+
+Train dataset of P1 partition:
+
+```{r LoadDATA}
+data <- readRDS(file="../../data/TrainP1.RDS")
+```
+
+
+
+
+# **Model M1**
+
+```{r loadM1}
+mod <- readRDS(file="../../outputs/models/P1/MOD1.rds")
+```
+
+
+## Residual variance 
+
+There are two ways of computing the residual variance. See [Bayesian R2 and LOO-R2 by *Aki Vehtari, Andrew Gelman, Ben Goodrich, Jonah Gabry*](https://avehtari.github.io/bayes_R2/bayes_R2.html) from which the mathematical formulas and the codes come from. 
+
+
+First, we can calculate the residual variance using residuals draws from the residual distribution, which is obtained:
+
+$$ Var_{res} = Var_{n=1}^{N} \hat{e}_{n} $$
+where $\hat{e}_{n} = y_{n} - \hat{y}_{n}$
+ 
+ 
+```{r YpredM1}
+y <- mod$data$`log(height)`
+ypred <- pp_expect(mod, transform = TRUE)
+```
+
+
+```{r ResVarResidualDrawsM1}
+e <- -1 * sweep(ypred, 2, y)
+var_e <- apply(e, 1, var)
+data.frame(Parameter="$Var_{e}$",
+           Median=median(var_e),
+           SD=sd(var_e),
+           LowCI=HPDI(var_e,prob=0.95)[[1]],
+           SudCI=HPDI(var_e,prob=0.95)[[2]]) %>% 
+  knitr::kable(digits = 4 ,format = "markdown")
+```
+
+
+```{r DensResVarResidualDrawsM1, fig.height=3.5,fig.width=4,echo=F}
+dens(as.mcmc((var_e)),main="Density plot of the residual variance\nfrom the residual draws")
+```
+
+The second way to obtain the residual variance is by using draws from the modeled (approximate) residual variance. For linear regression, the residual variance can thus be defined as: 
+
+$$ Var_{res} = \sigma^{2}$$
+
+```{r ResVarModeledResidualVarianceM1}
+sigma2 <- as.matrix(mod, pars = c("sigma"))^2
+data.frame(Parameter="$\\sigma^{2}$",
+           Median=median(sigma2),
+                  SD=sd(sigma2),
+                  LowCI=HPDI(sigma2,prob=0.95)[[1]],
+                  SudCI=HPDI(sigma2,prob=0.95)[[2]]) %>% 
+  knitr::kable(digits = 4 ,format = "markdown")
+```
+
+
+```{r DesnResVarModeledResidualVarianceM1, fig.height=3.5,fig.width=4,echo=F}
+dens(as.mcmc((sigma2)),main="Density plot of the residual variance\nfrom modeled residual variance")
+```
+
+
+In the rest of the document, we will use the residual variance using residuals draws from the residual distribution $Var_{res} = Var_{n=1}^{N} \hat{e}_{n}$.
+
+```{r UsingResVarResidualDrawsM1}
+var_res <- sigma2
+```
+
+## Variance between genotypes
+
+```{r GenVarM1}
+var_gen <- as.matrix(mod, pars = c("sd_prov:clon__Intercept"))^2
+data.frame(Parameter="$Var_{genotype}$",
+           Median=median(var_gen),
+                  SD=sd(var_gen),
+                  LowCI=HPDI(var_gen,prob=0.95)[[1]],
+                  SudCI=HPDI(var_gen,prob=0.95)[[2]]) %>% 
+  knitr::kable(digits = 4 ,format = "markdown")
+```
+
+
+## Broad-sense heritability
+
+```{r HeritabilityM1}
+heritability <- var_gen / (var_gen + var_res)
+data.frame(Parameter="$H^{2}$",
+           Median=median(heritability),
+                  SD=sd(heritability),
+                  LowCI=HPDI(heritability,prob=0.95)[[1]],
+                  SudCI=HPDI(heritability,prob=0.95)[[2]]) %>% 
+  knitr::kable(digits = 4 ,format = "markdown")
+```
+
+
+# **Model M5**
+
+```{r loadM5}
+mod <- readRDS(file="../../outputs/models/P1/MOD5.rds")
+```
+
+
+## Residual variance
+
+Residual variance using draws from the residual distribution:
+
+```{r ResVarResidualDrawsM5}
+y <- mod$data$`log(height)`
+ypred <- pp_expect(mod, transform = TRUE)
+e <- -1 * sweep(ypred, 2, y)
+var_e <- apply(e, 1, var)
+data.frame(Parameter="$Var_{e}$",
+           Median=median(var_e),
+           SD=sd(var_e),
+           LowCI=HPDI(var_e,prob=0.95)[[1]],
+           SudCI=HPDI(var_e,prob=0.95)[[2]]) %>% 
+  knitr::kable(digits = 4 ,format = "markdown")
+```
+
+
+Residual variance using the modeled residual variance:
+
+```{r ResVarModeledResidualVarianceM5}
+sigma2 <- as.matrix(mod, pars = c("sigma"))^2
+data.frame(Parameter="$\\sigma^{2}$",
+           Median=median(sigma2),
+           SD=sd(sigma2),
+           LowCI=HPDI(sigma2,prob=0.95)[[1]],
+           SudCI=HPDI(sigma2,prob=0.95)[[2]]) %>% 
+  knitr::kable(digits = 4 ,format = "markdown")
+```
+
+```{r UsingResVarResidualDrawsM5}
+var_res <- sigma2
+```
+
+## Gene-pool specific heritability
+
+
+```{r GenePoolSpecificHeritability}
+# Northern-Africa gene pool
+var_gen <- as.matrix(mod, pars = c("sd_clon1__Intercept"))^2
+heritability <- var_gen / (var_gen + var_res)
+df <- data.frame(Median=mean(heritability),
+                 SD=sd(heritability),
+                 InfCI=HPDI(heritability,prob=0.95)[[1]],
+                 SupCI=HPDI(heritability,prob=0.95)[[2]])
+row.names(df) <- "hNA"
+hNA <- heritability[,1]
+
+# Corsican gene-pool
+var_gen <- as.matrix(mod, pars = c("sd_clon2__Intercept"))^2
+heritability <- var_gen / (var_gen + var_res)
+df["hC",] <- c(mean(heritability),
+               sd(heritability),
+               HPDI(heritability,prob=0.95)[[1]],
+               HPDI(heritability,prob=0.95)[[2]])
+hC <- heritability[,1]
+
+# Central Spain gene pool
+var_gen <- as.matrix(mod, pars = c("sd_clon3__Intercept"))^2
+heritability <- var_gen / (var_gen + var_res)
+df["hCS",] <- c(mean(heritability),
+               sd(heritability),
+               HPDI(heritability,prob=0.95)[[1]],
+               HPDI(heritability,prob=0.95)[[2]])
+hCS <- heritability[,1]
+
+# French Atlantic gene pool
+var_gen <- as.matrix(mod, pars = c("sd_clon4__Intercept"))^2
+heritability <- var_gen / (var_gen + var_res)
+df["hFA",] <- c(mean(heritability),
+               sd(heritability),
+               HPDI(heritability,prob=0.95)[[1]],
+               HPDI(heritability,prob=0.95)[[2]])
+hFA <- heritability[,1]
+
+# Iberian Atlantic gene pool
+var_gen <- as.matrix(mod, pars = c("sd_clon5__Intercept"))^2
+heritability <- var_gen / (var_gen + var_res)
+df["hIA",] <- c(mean(heritability),
+               sd(heritability),
+               HPDI(heritability,prob=0.95)[[1]],
+               HPDI(heritability,prob=0.95)[[2]])
+hIA <- heritability[,1]
+
+# South-eastern Spain gene pool
+var_gen <- as.matrix(mod, pars = c("sd_clon6__Intercept"))^2
+heritability <- var_gen / (var_gen + var_res)
+df["hSES",] <- c(mean(heritability),
+               sd(heritability),
+               HPDI(heritability,prob=0.95)[[1]],
+               HPDI(heritability,prob=0.95)[[2]])
+hSES <- heritability[,1]
+```
+
+```{r TableHeritability}
+df <- df %>% mutate(Parameter = recode_factor(rownames(df),
+                              'hNA'='$H^{2}_{NA}$',
+                              'hC'='$H^{2}_{C}$',
+                              'hCS'='$H^{2}_{CS}$',
+                              'hFA'='$H^{2}_{FA}$',
+                              'hIA'='$H^{2}_{IA}$',
+                              'hSES'='$H^{2}_{SES}$')) %>%  remove_rownames() %>%
+  dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
+
+df %>% knitr::kable(digits = 3 ,format = "markdown")
+print(xtable(df, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M5_HeritabilityEstimates.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+```
+
+```{r TotalGenVarM5, warning=F,message=F}
+POST <- data.frame(genepool=c(rep("hNA",6000),rep("hC",6000),rep("hCS",6000),rep("hFA",6000),rep("hIA",6000),rep("hSES",6000)),
+                   value=c(hNA,hC,hCS,hFA,hIA,hSES))
+
+POST <- POST %>%   group_by(genepool) %>%
+  dplyr::mutate(meanpergenepool = mean(value))%>%
+  ungroup()
+
+
+p <- ggplot()+
+  geom_vline(xintercept = 0, col        = "grey70") +
+  geom_density_ridges(data  = POST, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(genepool), meanpergenepool),
+                                    fill   = as.factor(genepool), vline_color = ..quantile..),
+                                scale = 1, 
+                                alpha = .6,
+                                rel_min_height=c(.006),
+                                size=0.8,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  
+  scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("5th & 95th percentiles", "Median"),
+                        name = NULL) +
+  
+  scale_fill_manual(values=c("gold2","darkorchid3","navyblue","turquoise2","orangered3","green3"), 
+                    labels = c("Corsica (C)",
+                               "Central Spain (CS)",
+                               "French Atlantic (FA)",
+                               "Iberian Atlantic (IA)",
+                               "Northern Africa (NA)", 
+                               "South-eastern Spain (SES)"),
+                    name="Gene pools:") +
+  
+    scale_y_discrete(labels=c("hNA"=parse(text = TeX("$H_{NA}^{2}$")),
+                            "hC"=parse(text = TeX("$H_{C}^{2}$")),
+                            "hCS"=parse(text = TeX("$H_{CS}^{2}$")),
+                            "hFA"=parse(text = TeX("$H_{FA}^{2}$")),
+                            "hIA"=parse(text = TeX("$H_{IA}^{2}$")),
+                            "hSES"=parse(text = TeX("$H_{SES}^{2}$")))) +
+  labs(y  = "", 
+       x  = TeX("Gene-pool specific broad-sense heritability estimates")) +
+  
+  theme_bw() + 
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=14), 
+        legend.text = element_text(size=18),
+        legend.title = element_text(size=20)) 
+```
+
+
+> Partial breeding values
+
+```{r M5PartialBreedingValues, warning=F,message=F}
+clon1 <- tidy(mod,parameters="r_clon1", intervals = FALSE)
+clon1$clon <- str_sub(clon1$term,9,-12) 
+clon1$term <- NULL
+colnames(clon1) <- c("est1","std1","clon")
+
+clon2 <- tidy(mod,parameters="r_clon2", intervals = FALSE)
+clon2$clon <- str_sub(clon2$term,9,-12) 
+clon2$term <- NULL
+colnames(clon2) <- c("est2","std2","clon")
+
+clon3 <- tidy(mod,parameters="r_clon3", intervals = FALSE)
+clon3$clon <- str_sub(clon3$term,9,-12) 
+clon3$term <- NULL
+colnames(clon3) <- c("est3","std3","clon")
+
+clon4 <- tidy(mod,parameters="r_clon4", intervals = FALSE)
+clon4$clon <- str_sub(clon4$term,9,-12) 
+clon4$term <- NULL
+colnames(clon4) <- c("est4","std4","clon")
+
+clon5 <- tidy(mod,parameters="r_clon5", intervals = FALSE)
+clon5$clon <- str_sub(clon5$term,9,-12) 
+clon5$term <- NULL
+colnames(clon5) <- c("est5","std5","clon")
+
+clon6 <- tidy(mod,parameters="r_clon6", intervals = FALSE)
+clon6$clon <- str_sub(clon6$term,9,-12) 
+clon6$term <- NULL
+colnames(clon6) <- c("est6","std6","clon")
+
+ps <- data %>% dplyr::select(clon,Q1,Q2,Q3,Q4,Q5,Q6,max.Qvalue,max.Q) %>%  distinct()
+
+g <- Reduce(
+  function(x, y, ...) merge(x, y, ...), 
+  list(clon1,clon2,clon3,clon4,clon5,clon6,ps)
+)
+
+g <- g %>% dplyr::select(starts_with("est"),clon,max.Q) %>%
+  pivot_longer(-c(clon,max.Q),names_to="PBV",values_to="est")
+
+
+pPBV <- ggplot(g, aes(x=max.Q, y=est, fill=PBV)) + 
+   geom_boxplot(alpha=0.6) + theme_bw() +
+  scale_x_discrete(labels=c("Q1"="Northern Africa",
+                            "Q2"="Corsica",
+                            "Q3"="Central Spain",
+                            "Q4"="French Atlantic",
+                            "Q5"="Iberian Atlantic",
+                            "Q6"="South-eastern Spain")) + 
+  scale_fill_manual(values=c("orangered3","gold2","darkorchid3","navyblue","turquoise2","green3"), 
+                    labels = c("Northern Africa", 
+                               "Corsica",
+                               "Central Spain",
+                               "French Atlantic",
+                               "Iberian Atlantic",
+                               "South-eastern Spain"),
+                    name=TeX("Gene pools\ncontributing to the\npartial breeding values:")) + 
+  labs(y        = "Means of the posterior distribution\nof the breeding values", 
+       x        = TeX("Dominant gene pool for each genotype")) +
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=14), 
+        legend.text = element_text(size=18),
+        legend.title = element_text(size=20)) 
+
+```
+
+
+> Figure in the manuscript 
+
+
+```{r FigureAddGenVarM5, fig.width=10 ,fig.height=9,warning=F,message=F}
+pPBVf <- pPBV + theme(legend.position = "none")
+
+pp <-  ggarrange(p,pPBVf,labels=c("A","B"),nrow=2,heights = c(1, 1.3))
+ggsave(pp,file="../../figs/manuscript/heritabilityM5.png",height=12,width=12)
+pp 
+```
+
