@@ -16,6 +16,7 @@
 
 # Figures
 *.png
+*.svg
 
 # Tables
 *.tex
