@@ -23,6 +23,9 @@
 # Directories
 /doc/*
 
+# Maps
+/maps/*
+
 # Reports
 *.pdf
 *.html
