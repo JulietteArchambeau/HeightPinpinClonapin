@@ -1865,7 +1865,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
                               'sd_site__bio5_prov.sc'="$\\sigma_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma_{\\beta_{min.pre,s}}$",
-                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_block__Intercept'='$\\sigma_{B}$')) %>% 
   dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
@@ -1896,7 +1896,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'sd_prov__Intercept'="$\\sigma_{P}$",
                               'sd_site__bio5_prov.sc'="$\\sigma_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma_{\\beta_{min.pre,s}}$",
-                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gPEA,s}}$",
                               'sd_prov:clon__Intercept'='$\\sigma_{G}$',
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
@@ -1917,7 +1917,7 @@ mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
                             "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
                             'sd_site__bio5_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{max.temp,s}}$")),
                             'sd_site__bio14_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{min.pre,s}}$")),
-                            'sd_site__gPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{gpea,s}}$")),
+                            'sd_site__gPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{gPEA,s}}$")),
                             "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B}$")),
                             "sd_mmQ1Q2Q3Q4Q5Q6__Intercept"=parse(text = TeX("$\\sigma_{g_{j}}$")),
                             "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
@@ -1950,7 +1950,7 @@ df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
                               'sd_site__bio5_prov.sc'="$\\sigma^{2}_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma^{2}_{\\beta_{min.pre,s}}$",
-                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma^{2}_{S}$',
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
@@ -2005,7 +2005,7 @@ df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
                               'sd_site__bio5_prov.sc'="$\\sigma^{2}_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma^{2}_{\\beta_{min.pre,s}}$",
-                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gPEA,s}}$",
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
   dplyr::select(Parameter,Median,SD,InfCI,SupCI)
@@ -2051,7 +2051,7 @@ p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__b|sd_site__g|sd_site__c|s
   scale_y_discrete(labels=c("square(sd_prov:clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
                             "square(sd_site__bio5_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{max.temp,s}}$")),
                             "square(sd_site__bio14_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{min.pre,s}}$")),
-                            "square(sd_site__gPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{gpea,s}}$")),
+                            "square(sd_site__gPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{gPEA,s}}$")),
                             "square(sd_prov:site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{Inter}$")),
                             "square(sd_mmQ1Q2Q3Q4Q5Q6__Intercept)"=parse(text = TeX("$\\sigma^{2}_{g_{j}}$")),
                             "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
@@ -2287,11 +2287,11 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>%
   filter(str_detect(term, "^r_site.*PEA.sc\\]")) %>% 
   rename_all(str_to_title) %>% 
   dplyr::rename("Mean"=Estimate) %>% 
-  mutate(Term = recode_factor(Term, 'r_site[portugal,gPEA.sc]' = '$\\beta_{gpea,Portugal}$',
-                              'r_site[bordeaux,gPEA.sc]' = '$\\beta_{gpea,Bordeaux}$',
-                              'r_site[asturias,gPEA.sc]' = '$\\beta_{gpea,Asturias}$',
-                              'r_site[madrid,gPEA.sc]' = '$\\beta_{gpea,Madrid}$',
-                              'r_site[caceres,gPEA.sc]' = '$\\beta_{gpea,Caceres}$'))
+  mutate(Term = recode_factor(Term, 'r_site[portugal,gPEA.sc]' = '$\\beta_{gPEA,Portugal}$',
+                              'r_site[bordeaux,gPEA.sc]' = '$\\beta_{gPEA,Bordeaux}$',
+                              'r_site[asturias,gPEA.sc]' = '$\\beta_{gPEA,Asturias}$',
+                              'r_site[madrid,gPEA.sc]' = '$\\beta_{gPEA,Madrid}$',
+                              'r_site[caceres,gPEA.sc]' = '$\\beta_{gPEA,Caceres}$'))
 df %>% knitr::kable(digits = 3 ,format = "markdown")
 ```
 
@@ -2306,11 +2306,11 @@ tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0
 mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=prob,prob_outer=prob_outer,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
-  scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Portugal}$")),
-                            'r_site[bordeaux,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Bordeaux}$")),
-                            'r_site[asturias,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Asturias}$")),
-                            'r_site[madrid,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Madrid}$")),
-                            'r_site[caceres,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Caceres}$")))) 
+  scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Portugal}$")),
+                            'r_site[bordeaux,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Bordeaux}$")),
+                            'r_site[asturias,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Asturias}$")),
+                            'r_site[madrid,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Madrid}$")),
+                            'r_site[caceres,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Caceres}$")))) 
 ```
 
 
@@ -2349,7 +2349,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
                               'sd_site__bio5_prov.sc'="$\\sigma_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma_{\\beta_{min.pre,s}}$",
-                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_block__Intercept'='$\\sigma_{B}$')) %>% 
   dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
@@ -2380,7 +2380,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'sd_prov__Intercept'="$\\sigma_{P}$",
                               'sd_site__bio5_prov.sc'="$\\sigma_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma_{\\beta_{min.pre,s}}$",
-                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rPEA,s}}$",
                               'sd_prov:clon__Intercept'='$\\sigma_{G}$',
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma_{g_{j}}$',
@@ -2402,7 +2402,7 @@ mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
                             "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
                             'sd_site__bio5_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{max.temp,s}}$")),
                             'sd_site__bio14_prov.sc'=parse(text = TeX("$\\sigma_{\\beta_{min.pre,s}}$")),
-                            'sd_site__rPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{rpea,s}}$")),
+                            'sd_site__rPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{rPEA,s}}$")),
                             "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B}$")),
                             "sd_mmQ1Q2Q3Q4Q5Q6__Intercept"=parse(text = TeX("$\\sigma_{g_{j}}$")),
                             "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
@@ -2435,7 +2435,7 @@ df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
                               'sd_site__bio5_prov.sc'="$\\sigma^{2}_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma^{2}_{\\beta_{min.pre,s}}$",
-                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma^{2}_{S}$',
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
@@ -2490,7 +2490,7 @@ df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}
                               'sd_mmQ1Q2Q3Q4Q5Q6__Intercept'='$\\sigma^{2}_{g_{j}}$',
                               'sd_site__bio5_prov.sc'="$\\sigma^{2}_{\\beta_{max.temp,s}}$",
                               'sd_site__bio14_prov.sc'="$\\sigma^{2}_{\\beta_{min.pre,s}}$",
-                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rPEA,s}}$",
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
   dplyr::select(Parameter,Median,SD,InfCI,SupCI)
@@ -2536,7 +2536,7 @@ p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__b|sd_site__r|sd_site__c|s
   scale_y_discrete(labels=c("square(sd_prov:clon__Intercept)"=parse(text = TeX("$\\sigma^{2}_{G}$")),
                             "square(sd_site__bio5_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{max.temp,s}}$")),
                             "square(sd_site__bio14_prov.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{min.pre,s}}$")),
-                            "square(sd_site__rPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{rpea,s}}$")),
+                            "square(sd_site__rPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{rPEA,s}}$")),
                             "square(sd_prov:site__Intercept)"=parse(text = TeX("$\\sigma^{2}_{Inter}$")),
                             "square(sd_mmQ1Q2Q3Q4Q5Q6__Intercept)"=parse(text = TeX("$\\sigma^{2}_{g_{j}}$")),
                             "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
@@ -2760,7 +2760,7 @@ mod %>%  mcmc_intervals(regex_pars = "^r_site.*bio14_prov.sc\\]",
 ```{r M8BetarPEATable, warning=F,message=F}
 # site <- unique(data$site)
 # par <-paste(paste0("'r_site[",site,",rPEA.sc]'")) 
-# par2 <-paste(paste0("'$\\beta_{rpea,",site,"}$'")) 
+# par2 <-paste(paste0("'$\\beta_{rPEA,",site,"}$'")) 
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
 df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>% 
@@ -2768,11 +2768,11 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>%
   rename_all(str_to_title) %>% 
   dplyr::rename("Mean"=Estimate) %>% 
   mutate(Term = recode_factor(Term, 
-                              'r_site[portugal,rPEA.sc]' = '$\\beta_{rpea,Portugal}$',
-                              'r_site[bordeaux,rPEA.sc]' = '$\\beta_{rpea,Bordeaux}$',
-                              'r_site[asturias,rPEA.sc]' = '$\\beta_{rpea,Asturias}$',
-                              'r_site[madrid,rPEA.sc]' = '$\\beta_{rpea,Madrid}$',
-                              'r_site[caceres,rPEA.sc]' = '$\\beta_{rpea,Caceres}$'))
+                              'r_site[portugal,rPEA.sc]' = '$\\beta_{rPEA,Portugal}$',
+                              'r_site[bordeaux,rPEA.sc]' = '$\\beta_{rPEA,Bordeaux}$',
+                              'r_site[asturias,rPEA.sc]' = '$\\beta_{rPEA,Asturias}$',
+                              'r_site[madrid,rPEA.sc]' = '$\\beta_{rPEA,Madrid}$',
+                              'r_site[caceres,rPEA.sc]' = '$\\beta_{rPEA,Caceres}$'))
 df %>% knitr::kable(digits = 3 ,format = "markdown")
 ```
 
@@ -2787,11 +2787,11 @@ tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0
 mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=prob,prob_outer=prob_outer,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
-  scale_y_discrete(labels=c('r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Portugal}$")),
-                            'r_site[bordeaux,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Bordeaux}$")),
-                            'r_site[asturias,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Asturias}$")),
-                            'r_site[madrid,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Madrid}$")),
-                            'r_site[caceres,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Caceres}$")))) 
+  scale_y_discrete(labels=c('r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Portugal}$")),
+                            'r_site[bordeaux,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Bordeaux}$")),
+                            'r_site[asturias,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Asturias}$")),
+                            'r_site[madrid,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Madrid}$")),
+                            'r_site[caceres,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Caceres}$")))) 
 ```
 
 
@@ -3546,7 +3546,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'b_Iage.scE2'= '$\\beta_{age2}$',
                               'sigma'='$\\sigma$',
                               'b_Intercept'='$\\beta_{0}$',
-                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_block__Intercept'='$\\sigma_{B}$')) %>% 
   dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
@@ -3574,7 +3574,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'b_Iage.scE2'= '$\\beta_{age2}$',
                               'sigma'='$\\sigma$',
                               'b_Intercept'='$\\beta_{0}$',
-                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma_{\\beta_{gPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_block__Intercept'='$\\sigma_{B}$')) %>% 
   dplyr::select(Parameter,Median,SD,InfCI,SupCI) %>%
@@ -3592,7 +3592,7 @@ mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
   scale_y_discrete(labels=c("sigma"=parse(text=TeX("$\\sigma$")),
                             'b_Intercept'=parse(text = TeX("$\\beta_{0}$")),
                             "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
-                            'sd_site__gPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{gpea,s}}$")),
+                            'sd_site__gPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{gPEA,s}}$")),
                             "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B}$")),
                             "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
                             "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")))) +
@@ -3619,7 +3619,7 @@ for(i in pars){
   df[i,"SD"] <- sd(sims_i)}
 
 df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
-                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma^{2}_{S}$',
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
@@ -3669,7 +3669,7 @@ for(i in pars){
 
 df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
                               'sd_site__Intercept'='$\\sigma^{2}_{S}$',
-                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gpea,s}}$",
+                              'sd_site__gPEA.sc'="$\\sigma^{2}_{\\beta_{gPEA,s}}$",
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
   dplyr::select(Parameter,Median,SD,InfCI,SupCI)
@@ -3712,7 +3712,7 @@ In the Supplementary Information.
 p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__b|sd_site__g|sd_site__c|sd_clon|sd_prov|sd_site:block|sigma|sd_mm)",transformations="square",
                      prob=prob,prob_outer=prob_outer,point_est = "median") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
-  scale_y_discrete(labels=c("square(sd_site__gPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{gpea,s}}$")),
+  scale_y_discrete(labels=c("square(sd_site__gPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{gPEA,s}}$")),
                             "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
                             "square(sigma)"=parse(text = TeX("$\\sigma^{2}$"))
                             )) 
@@ -3752,11 +3752,11 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>%
   rename_all(str_to_title) %>% 
   dplyr::rename("Mean"=Estimate) %>% 
   mutate(Term = recode_factor(Term, 
-                              'r_site[portugal,gPEA.sc]' = '$\\beta_{gpea,Portugal}$',
-                              'r_site[bordeaux,gPEA.sc]' = '$\\beta_{gpea,Bordeaux}$',
-                              'r_site[asturias,gPEA.sc]' = '$\\beta_{gpea,Asturias}$',
-                              'r_site[madrid,gPEA.sc]' = '$\\beta_{gpea,Madrid}$',
-                              'r_site[caceres,gPEA.sc]' = '$\\beta_{gpea,Caceres}$'))
+                              'r_site[portugal,gPEA.sc]' = '$\\beta_{gPEA,Portugal}$',
+                              'r_site[bordeaux,gPEA.sc]' = '$\\beta_{gPEA,Bordeaux}$',
+                              'r_site[asturias,gPEA.sc]' = '$\\beta_{gPEA,Asturias}$',
+                              'r_site[madrid,gPEA.sc]' = '$\\beta_{gPEA,Madrid}$',
+                              'r_site[caceres,gPEA.sc]' = '$\\beta_{gPEA,Caceres}$'))
 df %>% knitr::kable(digits = 3 ,format = "markdown")
 ```
 
@@ -3771,17 +3771,17 @@ df %>% knitr::kable(digits = 3 ,format = "markdown")
 mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=prob,prob_outer=prob_outer,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
-  scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Portugal}$")),
-                            'r_site[bordeaux,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Bordeaux}$")),
-                            'r_site[asturias,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Asturias}$")),
-                            'r_site[madrid,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Madrid}$")),
-                            'r_site[caceres,gPEA.sc]' = parse(text = TeX("$\\beta_{gpea,Caceres}$")))) 
+  scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Portugal}$")),
+                            'r_site[bordeaux,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Bordeaux}$")),
+                            'r_site[asturias,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Asturias}$")),
+                            'r_site[madrid,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Madrid}$")),
+                            'r_site[caceres,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Caceres}$")))) 
 ```
 
 
 
 ```{r figsbetaM11, fig.width=8,message=F,warning=F}
-pea="gpea"
+pea="gPEA"
 variable ="gPEA.sc"
   
 POST <- posterior_samples(mod,pars = "^r_site\\[.*sc\\]") %>% dplyr::rename(
@@ -3872,7 +3872,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'b_Iage.scE2'= '$\\beta_{age2}$',
                               'sigma'='$\\sigma$',
                               'b_Intercept'='$\\beta_{0}$',
-                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_block__Intercept'='$\\sigma_{B}$')) %>% 
   dplyr::select(Parameter,Mean,SD,InfCI,SupCI) %>%
@@ -3901,7 +3901,7 @@ df %>% mutate(Parameter = recode_factor(rownames(df),'b_age.sc'="$\\beta_{age}$"
                               'sigma'='$\\sigma$',
                               'b_Intercept'='$\\beta_{0}$',
                               'sd_prov__Intercept'="$\\sigma_{P}$",
-                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma_{\\beta_{rPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma_{S}$',
                               'sd_block__Intercept'='$\\sigma_{B}$')) %>% 
   dplyr::select(Parameter,Median,SD,InfCI,SupCI) %>%
@@ -3919,7 +3919,7 @@ mod %>%  mcmc_intervals(regex_pars = "^(sd|sigma|b)",
   scale_y_discrete(labels=c("sigma"=parse(text=TeX("$\\sigma$")),
                             'b_Intercept'=parse(text = TeX("$\\beta_{0}$")),
                             "sd_site__Intercept"=parse(text = TeX("$\\sigma_{S}$")),
-                            'sd_site__rPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{rpea,s}}$")),
+                            'sd_site__rPEA.sc'=parse(text = TeX("$\\sigma_{\\beta_{rPEA,s}}$")),
                             "sd_block__Intercept"=parse(text = TeX("$\\sigma_{B}$")),
                             "b_age.sc"=parse(text = TeX("$\\beta_{age}$")),
                             "b_Iage.scE2"=parse(text = TeX("$\\beta_{age2}$")))) +
@@ -3947,7 +3947,7 @@ for(i in pars){
 
 df <- df %>% mutate(Parameter = recode_factor(rownames(df),
                               'sigma'='$\\sigma^{2}$',
-                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rPEA,s}}$",
                               'sd_site__Intercept'='$\\sigma^{2}_{S}$',
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
@@ -3997,7 +3997,7 @@ for(i in pars){
 
 df <- df %>% mutate(Parameter = recode_factor(rownames(df),'sigma'='$\\sigma^{2}$',
                               'sd_site__Intercept'='$\\sigma^{2}_{S}$',
-                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rpea,s}}$",
+                              'sd_site__rPEA.sc'="$\\sigma^{2}_{\\beta_{rPEA,s}}$",
                               'sd_block__Intercept'='$\\sigma^{2}_{B}$')) %>% 
   remove_rownames() %>%
   dplyr::select(Parameter,Median,SD,InfCI,SupCI)
@@ -4040,7 +4040,7 @@ In the Supplementary Information.
 p1 <- mod %>%  mcmc_intervals(regex_pars = "^(sd_site__b|sd_site__r|sd_site__c|sd_clon|sd_prov|sd_site:block|sigma|sd_mm)",transformations="square",
                      prob=prob,prob_outer=prob_outer,point_est = "median") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
-  scale_y_discrete(labels=c("square(sd_site__rPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{rpea,s}}$")),
+  scale_y_discrete(labels=c("square(sd_site__rPEA.sc)"=parse(text = TeX("$\\sigma^{2}_{\\beta_{rPEA,s}}$")),
                             "square(sd_site:block__Intercept)"=parse(text = TeX("$\\sigma^{2}_{B}$")),
                             "square(sigma)"=parse(text = TeX("$\\sigma^{2}$"))
                             )) 
@@ -4082,11 +4082,11 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>%
   rename_all(str_to_title) %>%  
   dplyr::rename("Mean"=Estimate) %>% 
   mutate(Term = recode_factor(Term, 
-                              'r_site[portugal,rPEA.sc]' = '$\\beta_{rpea,Portugal}$',
-                              'r_site[bordeaux,rPEA.sc]' = '$\\beta_{rpea,Bordeaux}$',
-                              'r_site[asturias,rPEA.sc]' = '$\\beta_{rpea,Asturias}$',
-                              'r_site[madrid,rPEA.sc]' = '$\\beta_{rpea,Madrid}$',
-                              'r_site[caceres,rPEA.sc]' = '$\\beta_{rpea,Caceres}$'))
+                              'r_site[portugal,rPEA.sc]' = '$\\beta_{rPEA,Portugal}$',
+                              'r_site[bordeaux,rPEA.sc]' = '$\\beta_{rPEA,Bordeaux}$',
+                              'r_site[asturias,rPEA.sc]' = '$\\beta_{rPEA,Asturias}$',
+                              'r_site[madrid,rPEA.sc]' = '$\\beta_{rPEA,Madrid}$',
+                              'r_site[caceres,rPEA.sc]' = '$\\beta_{rPEA,Caceres}$'))
 df %>% knitr::kable(digits = 3 ,format = "markdown")
 ```
 
@@ -4101,16 +4101,16 @@ df %>% knitr::kable(digits = 3 ,format = "markdown")
 mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
                      prob=prob,prob_outer=prob_outer,point_est = "mean") +  theme_bw() +
   theme(axis.text = element_text(size=16)) +
-  scale_y_discrete(labels=c('r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Portugal}$")),
-                            'r_site[bordeaux,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Bordeaux}$")),
-                            'r_site[asturias,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Asturias}$")),
-                            'r_site[madrid,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Madrid}$")),
-                            'r_site[caceres,rPEA.sc]' = parse(text = TeX("$\\beta_{rpea,Caceres}$")))) 
+  scale_y_discrete(labels=c('r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Portugal}$")),
+                            'r_site[bordeaux,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Bordeaux}$")),
+                            'r_site[asturias,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Asturias}$")),
+                            'r_site[madrid,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Madrid}$")),
+                            'r_site[caceres,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Caceres}$")))) 
 ```
 
 
 ```{r figsbetaM12, fig.width=20,fig.height=6,message=F,warning=F}
-pea="rpea"
+pea="rPEA"
 variable ="rPEA.sc"
   
 POST <- posterior_samples(mod,pars = "^r_site\\[.*sc\\]") %>% dplyr::rename(

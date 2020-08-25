@@ -76,7 +76,7 @@ library(tidyr)
 
 ```{r Partition}
 # Data partition used to fit the models:
-part <- "P3"
+part <- "P1"
 ```
 
 <!-- Functions used -->
@@ -89,7 +89,7 @@ ds=0.7
 ```
 
 
-# Posterior distribution of M7 and M8 (in the manuscript)
+# Posterior distribution of M7 and M8
 
 
 ```{r LoadModels}
@@ -189,10 +189,10 @@ pGP <- ggarrange(figs.GP[[1]],figs.GP[[2]],labels=c("M7. a)","M8. a)"),font.labe
 for(i in 1:2){
   
 if(i==1){
-  pea="gpea"
+  pea="gPEA"
   variable ="gPEA.sc"
 } else if (i==2){
-  pea="rpea"
+  pea="rPEA"
   variable ="rPEA.sc"
 }
   
@@ -283,10 +283,22 @@ figs.beta[[i]] <- ggplot()+
 pbeta <- ggarrange(figs.beta[[1]],figs.beta[[2]],labels=c("M7. b)","M8. b)"),font.label = list(size = 20),hjust=c(-0.1,-0.1),vjust=c(1.6,1.6),nrow=1)
 ```
 
+## Figures in the supplementary information 
+
 ```{r figtot, fig.width=20,fig.height=14,message=F,warning=F}
 figtot <- ggarrange(pGP,pbeta,nrow=2,heights=c(1,2)) 
 figtot
-ggsave(figtot,file=paste0("../../figs/manuscript/M7M8Posteriors",part,".png"),height=12,width=20)
+ggsave(figtot,file=paste0("../../figs/SuppInfo/M7M8Posteriors",part,".png"),height=12,width=20)
+```
+
+## Figure in the manuscript
+
+```{r figM8, fig.width=10,fig.height=14,message=F,warning=F}
+if(part == "P1"){
+figM8 <- ggarrange(figs.GP[[2]], figs.beta[[2]],labels=c("A)","B)"),
+          font.label = list(size = 20),hjust=c(-0.1,-0.1),vjust=c(1.6,1.6),nrow=2)
+ggsave(figM8,file=paste0("../../figs/manuscript/M8Posteriors",part,".png"),height=14,width=11)  
+}
 ```
 
 ##  Figure 1 bis (not used in the manuscript) 
@@ -303,10 +315,10 @@ figs.all <- list()
 for(i in 1:2){
   
 if(i==1){
-  pea="gpea"
+  pea="gPEA"
   variable ="gPEA.sc"
 } else if (i==2){
-  pea="rpea"
+  pea="rPEA"
   variable ="rPEA.sc"
 }
   
@@ -560,7 +572,7 @@ mod <- readRDS(file=paste0("../../outputs/models/",part,"/MOD11.rds"))
 ```
 
 ```{r FigsM11, fig.width=20,fig.height=6,message=F,warning=F}
-pea="gpea"
+pea="gPEA"
 variable ="gPEA.sc"
   
 POST <- posterior_samples(mod,pars = "^r_site\\[.*sc\\]") %>% dplyr::rename(
@@ -628,7 +640,7 @@ mod <- readRDS(file=paste0("../../outputs/models/",part,"/MOD12.rds"))
 ```
 
 ```{r figsbetaM12, fig.width=20,fig.height=6,message=F,warning=F}
-pea="rpea"
+pea="rPEA"
 variable ="rPEA.sc"
   
 POST <- posterior_samples(mod,pars = "^r_site\\[.*sc\\]") %>% dplyr::rename(
@@ -688,7 +700,12 @@ p1 <- ggarrange(pGP,pCP,labels=c("M9","M10"),font.label = list(size = 20),nrow=1
 p2 <- ggarrange(pgpea,prpea,labels=c("M11","M12"),font.label = list(size = 20),nrow=1,widths = c(1.2,1))
 fig <- ggarrange(p1,p2,nrow=2)
 fig 
-ggsave(fig, file=paste0("../../figs/manuscript/",part,"M9toM12PosteriorDistri.png"),width=20,height=12) 
+if(part=="P1"){
+ggsave(fig, file=paste0("../../figs/manuscript/",part,"M9toM12PosteriorDistri.png"),width=20,height=12)  
+} else{
+ggsave(fig, file=paste0("../../figs/SuppInfo/",part,"M9toM12PosteriorDistri.png"),width=20,height=12)  
+}
+ 
 ```
 
 
