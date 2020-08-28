@@ -356,6 +356,49 @@ p <- ggplot()+
         legend.title = element_text(size=20)) 
 ```
 
+```{r FigureTeamMeeting29072020,echo=F, warning=F,message=F}
+pteam <- ggplot()+
+  geom_vline(xintercept = 0, col        = "grey70") +
+  geom_density_ridges(data  = POST, 
+                                aes(x      = value,
+                                    y      = reorder(as.factor(genepool), meanpergenepool),
+                                    fill   = as.factor(genepool), vline_color = ..quantile..),
+                                scale = 1, 
+                                alpha = .6,
+                                rel_min_height=c(.006),
+                                size=0.8,
+                                quantile_lines = TRUE, quantiles = c(0.025,0.5,0.975)) +
+  
+  scale_discrete_manual("vline_color",
+                        values = c("blue", "red", "blue", "black"), 
+                        breaks = c(1, 2),
+                        labels = c("5th & 95th percentiles", "Median"),
+                        name = NULL) +
+  
+  scale_fill_manual(values=c("gold2","darkorchid3","navyblue","turquoise2","orangered3","green3"), 
+                    labels = c("Corsica (C)",
+                               "Central Spain (CS)",
+                               "French Atlantic (FA)",
+                               "Iberian Atlantic (IA)",
+                               "Northern Africa (NA)", 
+                               "South-eastern Spain (SES)"),
+                    name="Gene pools:") +
+  
+    scale_y_discrete(labels=c("hNA"=parse(text = TeX("$H_{NA}^{2}$")),
+                            "hC"=parse(text = TeX("$H_{C}^{2}$")),
+                            "hCS"=parse(text = TeX("$H_{CS}^{2}$")),
+                            "hFA"=parse(text = TeX("$H_{FA}^{2}$")),
+                            "hIA"=parse(text = TeX("$H_{IA}^{2}$")),
+                            "hSES"=parse(text = TeX("$H_{SES}^{2}$")))) +
+  labs(y  = "", 
+       x  = TeX("Gene-pool specific broad-sense heritability estimates")) +
+  
+  theme_bw() + 
+  theme(axis.text = element_text(size=18),
+        axis.title = element_text(size=18),
+        legend.position = "none") 
+ggsave(pteam,file="../../../../FormationsMeetings/team_meetings/july2020/genepoolh2.png",height=8,width=8)
+```
 
 > Partial breeding values
 
