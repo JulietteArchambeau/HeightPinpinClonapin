@@ -21,7 +21,7 @@ library(gdata)
 mypalette <- c("#D73027", "#F46D43", "#FDAE61" ,"#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1", "#4575B4")
   
 # Data partition used to fit the models:
-part <- "P3"
+part <- "P2"
 
 list.models <- c(paste0("M",c(0:2,7:12)))
 
@@ -93,7 +93,6 @@ for(i in 1:length(models)){
   }
 }
 
-df
 df$Models <- paste0("M",str_sub(df$Models,4,-1))
 df$Sites <- str_to_title(df$Sites)
 
@@ -114,7 +113,7 @@ pR2 <- df %>%
         legend.text = element_text(size=18),legend.title = element_text(size=20)) +
   guides(fill=guide_legend(ncol=3))
   
-ggsave(pR2,file=paste0("figs/manuscript/R2comparisons",part,".png"),height=9,width=14)
+ggsave(pR2,file=paste0("figs/SuppInfo/R2comparisons",part,".png"),height=9,width=14)
 
 pPEsd <- df %>% 
   mutate(Models = fct_relevel(Models, 
@@ -147,7 +146,7 @@ pPEse <- df %>%
 ggsave(pPEse,file=paste0("figs/SuppInfo/PEsecomparisons",part,".png"),height=8,width=15)
 
 
-# > Figure in the manuscript ####
+# > Figure in the manuscript (Figure 4) ####
 
 # with P1 and P2 partition
 
@@ -226,7 +225,6 @@ for(i in 1:length(models)){
   
 }
 
-df
 df$Models <- paste0("M",str_sub(df$Models,4,-1))
 
 saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_ProvSpecific_R2_PE_GGplotTable.rds"))
@@ -280,3 +278,50 @@ pPEse <- df %>%
 ggsave(pPEse,file=paste0("figs/SuppInfo/PEsecomparisonsProv",part,".png"),height=8,width=15)
 
 }
+
+
+## Pearson correlation coefficient rho ####
+
+sites <- rep(unique(train$site),length(names(models)))
+vec <- c()
+for(m in names(models)) vec <- c(vec,rep(m,5))
+df <- data.frame(Models=vec,Sites=sites,Rhomean=NA,Rhosd=NA,Rhose=NA)
+
+for(i in 1:length(models)){
+  
+  if(names(models[i])=="MOD13") next
+  
+  test$pred <- pp_expect(models[[i]],newdata = test,allow_new_levels=T)  %>% t() %>%   rowMeans() %>% abs()
+  
+  
+  for(s in unique(models[[i]]$data$site)){
+    pred_site <- cor(test$pred[test$site==s],log(test$height[test$site==s]))
+    
+    df[df$Models==names(models[i])&df$Sites==s,"Rhomean"] <- mean(pred_site)
+    #df[df$Models==names(models[i])&df$Sites==s,"Rhosd"] <- sd(pred_site)
+    #df[df$Models==names(models[i])&df$Sites==s,"Rhose"] <- sd(pred_site)/sqrt(length(pred_site))
+    
+  }
+}
+
+df$Models <- paste0("M",str_sub(df$Models,4,-1))
+df$Sites <- str_to_title(df$Sites)
+
+saveRDS(df, file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_Rho_GGplotTable.rds"))
+df <- readRDS(file=paste0("outputs/PerfTables/",part,"_ModelPerf_SiteSpecific_Rho_GGplotTable.rds"))
+df <- df[df$Models %in% list.models, ]
+
+pRho <- df %>% 
+  mutate(Models = fct_relevel(Models, 
+                              list.models)) %>% 
+  ggplot(aes(fill=Models, y=Rhomean, x=Sites)) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  theme_bw() +
+  scale_fill_manual(values=mypalette) +
+  labs(y=TeX("Site-specific Pearson correlation coefficient $\\rho$"),x="") +
+  theme(legend.position = c(0.5,0.9),axis.text = element_text(size=22),
+        axis.title = element_text(size=20), 
+        legend.text = element_text(size=18),legend.title = element_text(size=20)) +
+  guides(fill=guide_legend(ncol=3))
+
+ggsave(pRho,file=paste0("figs/Extra/Rhocomparisons",part,".png"),height=9,width=14)
