@@ -1,10 +1,23 @@
-# Script to create the figure POSTDHPC in the manuscript
+################################################################################################"
+###########      Script to create the figure S19 of the Supplementary Information      #########"
+################################################################################################"
+
+
+# This figure summarize the genetic response in models M3, M5 & M6
 
 
 library(cowplot)
 library(ggplot2)
 
-# M3 ####
+
+data <- readRDS(file="data/TrainP1.RDS")
+
+
+
+
+# Model M3 ####
+
+# The genetic response is represented by the genotype and provenance intercepts.
 
 # a) Provenace intercepts ####
 
@@ -100,13 +113,15 @@ pM3_prov <- ggplot()+
   theme_bw() + theme(axis.text = element_text(size=12),
                      axis.title = element_text(size=14), 
                      legend.text = element_text(size=18),
-                     legend.title = element_text(size=20))# + theme(legend.position = c(0.2,0.75),legend.key = element_blank(),legend.background=element_blank()) 
+                     legend.title = element_text(size=20))
 
-pM3_prov
+#---------------------------------------------------------------------------------------------------"
 
 
+# Model M4 ####
 
-# M4 ####
+# The genetic response is represented by the genotype and provenance intercepts, and the gene pool intercepts.
+
 mod <- readRDS(file="outputs/models/P1/MOD4.rds")
 
 ## a) Provenance intercepts ####
@@ -266,8 +281,11 @@ pM4_GP <- ggplot()+
                      legend.text = element_text(size=18),legend.title = element_text(size=20))
 
 
+#---------------------------------------------------------------------------------------------------"
 
-# M6 ####
+# Model M6 ####
+
+# The genetic response is represented by the genotype and provenance intercepts, the gene pool intercepts and the provenance climate-of-origin intercepts. 
 
 mod <- readRDS(file="outputs/models/P1/MOD6.rds")
 
@@ -529,7 +547,7 @@ pM6_PC <- ggplot()+
 
 
 
-## Figure ####
+## Final figure ####
 
 
 # Extract legend
@@ -550,4 +568,4 @@ pM6_PC <- pM6_PC + theme(legend.position = "none")
 
 fig <- plot_grid(pM3_prov,NULL,legend,pM4_prov,pM4_GP,NULL,pM6_prov,pM6_GP,pM6_PC, labels = c('M3','',"","M4","","","M6","",""),
                  label_size = 20 )
-ggsave(fig, file="figs/manuscript/PostDHPCbis.png",width = 16,height=19) 
+ggsave(fig, file="figs/SuppInfo/PostDHPC.png",width = 16,height=19) 
