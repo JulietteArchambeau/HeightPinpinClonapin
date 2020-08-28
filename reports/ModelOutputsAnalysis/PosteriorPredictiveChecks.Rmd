@@ -1,0 +1,307 @@
+---
+title: "Posterior Predictive Checks and Residuals - P2 partition"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{css, echo=FALSE}
+pre {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+pre[class] {
+  max-height: 600px;
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE,echo=F)
+options(width = 300)
+library(knitr)
+#library(rethinking)
+#library(readr)
+#library(broom)
+library(latex2exp)
+library(cowplot)
+library(ggplot2)
+library(ggpubr)
+library(stringi)
+library(dplyr)
+#library(ggthemes)
+library(bayesplot)
+library(devtools)
+#library(ggbiplot)
+#library(arm)
+#library(Matrix)
+#library(matrixcalc)
+library(ggridges)
+library(tidyverse)
+library(tibble)
+library(brms)
+#library(kableExtra)
+#library(compare)
+library(tidybayes)
+```
+
+
+
+# P2 partition
+
+```{r PartP2, echo=T}
+# Data partition used to fit the models
+part <- "P2"
+
+# Path
+path= paste0("outputs/models/",part,"/")
+```
+
+```{r LoadModels}
+# Models in a list
+myFiles <- list.files(path=paste0("../../",path),pattern=".rds")
+models <- list()
+for (i in 1:length(myFiles)){
+  models[[i]] <- readRDS(file=paste0("../../",path,myFiles[i]))
+}
+names(models) <- str_sub(myFiles,0,-5)
+```
+
+```{r loadTest}
+# Load Test dataset
+if (grepl("P1",path)==TRUE){
+  test <- readRDS(file="../../data/TestP1prepared.RDS")
+  train <- readRDS(file="../../data/TrainP1.RDS")
+} else if (grepl("P2",path)==TRUE){
+  test <- readRDS(file="../../data/TestP2prepared.RDS")
+  train <- readRDS(file="../../data/TrainP2.RDS")
+}
+```
+
+## Some posterior predictive checks
+
+### PPC Density overlay (on the log scale)
+
+Comparison of the empirical distribution of the data $y$ (dark line on the graphs) to the distributions of simulated/replicated data `yrep` from the posterior predictive distribution.
+
+
+```{r PPCDensOverlay}
+figs.train <- list()
+figs.test <- list()
+
+for (i in 1:length(models)){
+y <- models[[i]]$data$`log(height)`
+yrep_train <- posterior_predict(models[[i]], nsamples = 20)
+
+y_test <- log(test$height)
+yrep_test <- posterior_predict(models[[i]],newdata=test, nsamples = 20,allow_new_levels = TRUE)
+
+figs.train[[i]] <- pp_check(y,yrep_train,ppc_dens_overlay) + ggtitle(paste0("M",str_sub(names(models)[i],4,-1))) + theme_bw() +
+    ggplot2::ylab("Density") + ggplot2::xlab("Log(Height)") +
+    theme(plot.title = element_text(size = 20),axis.text=element_text(size=18),
+          axis.title = element_text( size = 18), legend.position = c(0.15, 0.8),
+          legend.text = element_text(size = 14),legend.background = element_rect(colour = "grey"),
+          legend.title = element_blank()) 
+
+
+figs.test[[i]] <- pp_check(log(test$height), yrep_test,ppc_dens_overlay) + ggtitle(paste0("M",str_sub(names(models)[i],4,-1)))+
+    ggplot2::ylab("Density") + ggplot2::xlab("Log(Height)") +
+    theme_bw() + theme(plot.title = element_text(size = 20),axis.text=element_text(size=18),
+          axis.title = element_text( size = 18), legend.position = c(0.15, 0.8),
+          legend.text = element_text(size = 14),legend.background = element_rect(colour = "grey"),
+          legend.title = element_blank())
+} 
+```
+
+#### Predictions on the train dataset 
+
+> Train dataset of the P2 partition => 28 provenances
+
+```{r PPCDensOverlayTrainP2,fig.height=12, fig.width=14}
+ggarrange(figs.train[[1]] ,figs.train[[2]], 
+          figs.train[[3]],figs.train[[4]],
+          figs.train[[5]],figs.train[[6]],
+          figs.train[[7]],figs.train[[8]],
+          figs.train[[9]],nrow=3,ncol=3,font.label = list(size = 20))
+```
+
+#### Predictions of the test dataset
+
+> Test dataset of the P2 partition => 6 provenances
+
+```{r PPCDensOverlayTestP2,fig.height=12,  fig.width=14}
+ggarrange(figs.test[[1]] ,figs.test[[2]],
+          figs.test[[3]],figs.test[[4]], 
+          figs.test[[5]],figs.test[[6]],
+          figs.test[[7]],figs.test[[8]],
+          figs.test[[9]],nrow=3,ncol=3,font.label = list(size = 20))
+```
+
+
+### PPC violin plot
+
+
+```{r PPCViolin, fig.height=6}
+figs.test.site <- list()
+figs.test.prov <- list()
+
+for (i in 1:length(models)){
+y_test <- log(test$height)
+yrep_test <- posterior_predict(models[[i]],newdata=test, nsamples = 20,allow_new_levels = TRUE)
+
+figs.test.site[[i]] <- ppc_violin_grouped(y_test,yrep_test, group=test$site, probs = c(0.1, 0.5, 0.9),
+                                          y_draw =  "both",y_alpha=0.3,y_size=0.5) + 
+  theme_bw() + 
+  ggtitle(paste0("M",str_sub(names(models)[i],4,-1))) +
+  theme(plot.title = element_text(size = 20),axis.text=element_text(size=18),
+          axis.title = element_text( size = 18), legend.position = c(0.6, 0.8),
+          legend.text = element_text(size = 25),legend.background = element_rect(colour = "grey"),
+          legend.title = element_blank()) 
+
+figs.test.prov[[i]] <- ppc_violin_grouped(y_test,yrep_test, group=test$prov, probs = c(0.1, 0.5, 0.9),
+                                          y_draw =  "both",y_alpha=0.3,y_size=0.5) + 
+  theme_bw() + 
+  ggtitle(paste0("M",str_sub(names(models)[i],4,-1))) +
+  theme(plot.title = element_text(size = 20),axis.text=element_text(size=18),
+          axis.title = element_text( size = 18), 
+          legend.text = element_text(size = 25),legend.background = element_rect(colour = "grey"),
+          legend.title = element_blank()) 
+}
+```
+
+#### Predictions in each site
+
+```{r PPCViolinTestSite, fig.width=20,fig.height=12}
+ggarrange(figs.test.site[[1]],
+          figs.test.site[[2]],
+          figs.test.site[[3]],
+          figs.test.site[[4]],
+          figs.test.site[[5]],
+          figs.test.site[[6]],
+          figs.test.site[[7]],
+          figs.test.site[[8]],
+          figs.test.site[[9]],
+          nrow=3)
+```
+
+#### Predictions in each provenance
+
+```{r PPCViolinTestProv, fig.width=20,fig.height=12}
+ggarrange(figs.test.prov[[1]],
+          figs.test.prov[[2]],
+          figs.test.prov[[3]],
+          figs.test.prov[[4]],
+          figs.test.prov[[5]],
+          figs.test.prov[[6]],
+          figs.test.prov[[7]],
+          figs.test.prov[[8]],
+          figs.test.prov[[9]],
+          nrow=3)
+```
+
+
+## Residuals plots
+
+### In the train dataset
+
+```{r ResidualsTrain}
+figs.res <- list()
+
+for (i in 1:length(models)){
+  
+res <- residuals(models[[i]],method="pp_expect",summary=F) %>% t() %>% rowMeans()
+fit <- pp_expect(models[[i]]) %>% t() %>% rowMeans()  
+
+figs.res[[i]] <- ggplot(tibble(PredictiveErrors=res,Predictions=fit), aes(x=Predictions, y=PredictiveErrors)) + 
+  geom_point(color="gray20",alpha=0.5) + 
+  theme_bw() + 
+  xlab("Predicted values") +
+  ylab("Predive errors") + 
+  ggtitle(paste0("M",str_sub(names(models)[i],4,-1))) + 
+  theme(axis.text = element_text(size=14),axis.title = element_text(size=14))
+
+}
+```
+
+> Predictions against predictive errors
+
+```{r PredictionsVSPredictiveErrorsTrain, fig.width=20, fig.height=14}
+ggarrange(figs.res[[1]],
+          figs.res[[2]],
+          figs.res[[3]],
+          figs.res[[4]],
+          figs.res[[5]],
+          figs.res[[6]],
+          figs.res[[7]],
+          figs.res[[8]],
+          figs.res[[9]],
+          nrow=3,ncol=3,font.label = list(size = 20))
+```
+
+
+
+### In the test data set 
+
+```{r ResidualsTest}
+figs.res <- list()
+
+for (i in 1:length(models)){
+  
+res <- residuals(models[[i]],method="pp_expect",summary=F,newdata=test,allow_new_levels=T) %>% t() %>% rowMeans()
+fit <- pp_expect(models[[i]],newdata=test,allow_new_levels=T) %>% t() %>% rowMeans()  
+
+figs.res[[i]] <- ggplot(tibble(PredictiveErrors=res,Predictions=fit), aes(x=Predictions, y=PredictiveErrors)) + 
+  geom_point(color="gray20",alpha=0.5) + 
+  theme_bw() + 
+  xlab("Predicted values") +
+  ylab("Predive errors") + 
+  ggtitle(paste0("M",str_sub(names(models)[i],4,-1))) + 
+  theme(axis.text = element_text(size=14),axis.title = element_text(size=14))
+
+}
+```
+
+> Predictions against predictive errors
+
+```{r PredictionsVSPredictiveErrorsTest, fig.width=20, fig.height=14}
+ggarrange(figs.res[[1]],
+          figs.res[[2]],
+          figs.res[[3]],
+          figs.res[[4]],
+          figs.res[[5]],
+          figs.res[[6]],
+          figs.res[[7]],
+          figs.res[[8]],
+          figs.res[[9]],
+          nrow=3,ncol=3,font.label = list(size = 20))
+```
+
+
+
+`r knitr::opts_chunk$set(eval = F)`
