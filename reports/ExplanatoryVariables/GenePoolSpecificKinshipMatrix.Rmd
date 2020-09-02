@@ -1,5 +1,5 @@
 ---
-title: "Gene pool specific additive genetic variances"
+title: "Gene pool specific total genetic variances"
 author: "Juliette Archambeau"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
@@ -69,7 +69,9 @@ knitr::opts_chunk$set(cache=F)
 
 #  Model equation based on equation 4 in [Muff et al. (2019)](https://gsejournal.biomedcentral.com/track/pdf/10.1186/s12711-019-0449-7)
 
-In this model, we want to both take into account the <span style="color:purple">population structure</span> and potentially <span style="color:purple">heterogeneous additive genetic variances between gene pools</span>. For that, we can use the following equation:
+Comment: In their paper, Muff et al. estimate the **additive genetic variance** and the associated **breeding values**. In our case, we estimate the **total genetic variance** (as we have clones and not families) and the associated **genetic values**.
+
+In this model, we want to both take into account the <span style="color:purple">population structure</span> and potentially <span style="color:purple">heterogeneous total genetic variances between gene pools</span>. For that, we can use the following equation:
 
 \begin{equation}
 y_{g} \sim \mathcal{N}( \beta_{0} + \sum_{j=1}^{r} q_{gj}g_{j} + \sum_{j=1}^{r} u_{gj}, \sigma_{g}^{2})
@@ -81,9 +83,9 @@ y_{g} \sim \mathcal{N}( \beta_{0} + \sum_{j=1}^{r} q_{gj}g_{j} + \sum_{j=1}^{r} 
 
     - $g_{j}$ is the expected average genetic effect in the gene pool $j$. There are $r$ gene pools (6 in our case). <span style="color:orange">(To be estimated)</span>
     
-- The potentially <span style="color:purple">**heterogeneous additive genetic variances between gene pools**</span> is considered in the term: $\sum_{j=1}^{r} u_{gj}$. In this term,
+- The potentially <span style="color:purple">**heterogeneous total genetic variances between gene pools**</span> is considered in the term: $\sum_{j=1}^{r} u_{gj}$. In this term,
 
-    - $u_{j}^\intercal = (u_{1j},...,u_{nj})^\intercal \sim \mathcal{N}(0,\sigma_{A_{j}}^{2} \mathbf{A}_{j})$ for all gene pools $j=1,...,r$ where $\sigma_{A}^{2}$ is the additive genetic variance in group $j$ and $\mathbf{A}_{j}$ is a gene pool specific relatedness matrix. We denote $u_{gj}$ as the <span style="color:purple">*partial breeding value*</span>, because it represents the contribution to the breeding value of genotype $g$ that is inherited from the gene pool $j$. Consequently, $\mathbf{A}_{j}$ contains the relatedness at the genes that have come from that group for each pair of genotypes. We assume that the contributions $u_{ij}$ of the same genotype $g$ are independent of each other, because they differ in genetic origin <span style="color:orange">. (To be estimated)</span>
+    - $u_{j}^\intercal = (u_{1j},...,u_{nj})^\intercal \sim \mathcal{N}(0,\sigma_{A_{j}}^{2} \mathbf{A}_{j})$ for all gene pools $j=1,...,r$ where $\sigma_{A}^{2}$ is the total genetic variance in group $j$ and $\mathbf{A}_{j}$ is a gene pool specific relatedness matrix. We denote $u_{gj}$ as the <span style="color:purple">*partial genetic value*</span>, because it represents the contribution to the genetic value of genotype $g$ that is inherited from the gene pool $j$. Consequently, $\mathbf{A}_{j}$ contains the relatedness at the genes that have come from that group for each pair of genotypes. We assume that the contributions $u_{ij}$ of the same genotype $g$ are independent of each other, because they differ in genetic origin <span style="color:orange">. (To be estimated)</span>
 
 
 > In this document, we calculate the 6 gene pool specific genetic relatedness matrices $\mathbf{A}_{j}$.
@@ -169,7 +171,7 @@ where $\mathbf{T}$ is lower triangular matrix with transposed $\mathbf{T}^\inter
 
 - **Comment on $\mathbf{T}$:** Each off-diagonal entry in $\mathbf{T}$ corresponds to the relatedness coefficient (expected relatedness) between genotypes $g$. All diagonal elements are 1 and all elements below the diagonal in the respective column correspond to the expected proportion of the genome that is shared between genotypes.
 
-- **Comment on $\mathbf{D}$:** In the absence of inbreeding, the diagonal entry $d_{gg}$ for genotype $g$ in $\mathbf{D}$ is $(1-0.5 p_{g})$, with $p_{g}$ corresponfing to the proportion of proportion of $g$'s ancestral genome that is known. Possible values are $p_{g} = 0, 0.5 \, \text{or} \, 1$ if no, one or two parents are known, respectively. This can be understood as follows: if, for example, one parent of an animal $g$ is unknown, its predicted breeding value is 0.5 times the breeding value of the known parent, but the other half of its breeding value is unknown. The deviation from the predicted breeding value that could be obtained if both parents were known is absorbed by the Mendelian sampling deviation. The respective variance thus contains the Mendelian sampling variance plus a variance that is due to the unknown parent. The more parents are unknown, the larger is this variance. In our case, the parents are unknown and we assume no inbreeding (as the seeds were collected 100 meters away), so $p_{g}=0$ and $d_{gg}=1$.
+- **Comment on $\mathbf{D}$:** In the absence of inbreeding, the diagonal entry $d_{gg}$ for genotype $g$ in $\mathbf{D}$ is $(1-0.5 p_{g})$, with $p_{g}$ corresponfing to the proportion of proportion of $g$'s ancestral genome that is known. Possible values are $p_{g} = 0, 0.5 \, \text{or} \, 1$ if no, one or two parents are known, respectively. This can be understood as follows: if, for example, one parent of an animal $g$ is unknown, its predicted genetic value is 0.5 times the genetic value of the known parent, but the other half of its genetic value is unknown. The deviation from the predicted genetic value that could be obtained if both parents were known is absorbed by the Mendelian sampling deviation. The respective variance thus contains the Mendelian sampling variance plus a variance that is due to the unknown parent. The more parents are unknown, the larger is this variance. In our case, the parents are unknown and we assume no ingenetic (as the seeds were collected 100 meters away), so $p_{g}=0$ and $d_{gg}=1$.
 
 - This text comes from [Muff et al. (2019)](https://gsejournal.biomedcentral.com/track/pdf/10.1186/s12711-019-0449-7)
 

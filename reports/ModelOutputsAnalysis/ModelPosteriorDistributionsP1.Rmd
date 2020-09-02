@@ -43,7 +43,7 @@ pre[class] {
 ```
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(fig.width = 5,fig.height = 4,cache=TRUE,echo=F)
+knitr::opts_chunk$set(fig.width = 5,fig.height = 4,cache=F,echo=F)
 options(width = 300)
 library(knitr)
 library(broom)
@@ -3894,7 +3894,7 @@ p_sigmaAj <- ggplot()+
                                "French Atlantic (FA)", 
                                "Iberian Atlantic (IA)",
                                "South-eastern Spain (SES)"),
-                    name="Gene pools\ncontributing to the\npartial breeding values:") +
+                    name="Gene pools\ncontributing to the\npartial genetic values:") +
   
     scale_y_discrete(labels=c("clon1"=parse(text = TeX("$\\sigma_{A_{NA}}^{2}$")),
                             "clon2"=parse(text = TeX("$\\sigma_{A_{C}}^{2}$")),
@@ -3903,7 +3903,7 @@ p_sigmaAj <- ggplot()+
                             "clon5"=parse(text = TeX("$\\sigma_{A_{IA}}^{2}$")),
                             "clon6"=parse(text = TeX("$\\sigma_{A_{SES}}^{2}$")))) + 
   labs(y  = "", 
-       x  = TeX("Variances $\\sigma_{A_{j}}^{2}$ of the partial breeding values $a_{gj}$ from gene pool $j$")) +
+       x  = TeX("Variances $\\sigma_{A_{j}}^{2}$ of the partial genetic values $a_{gj}$ from gene pool $j$")) +
   
   theme_bw() + 
   theme(axis.text = element_text(size=12),axis.title = element_text(size=14), 
@@ -3912,9 +3912,9 @@ p_sigmaAj <- ggplot()+
 
 
 
-### Partial breeding values
+### Partial genetic values
 
-```{r M5PartialBreedingValues, warning=F,message=F}
+```{r M5PartialGeneticValues, warning=F,message=F}
 clon1 <- tidy(mod,parameters="r_clon1", intervals = FALSE)
 clon1$clon <- str_sub(clon1$term,9,-12) 
 clon1$term <- NULL
@@ -3971,8 +3971,8 @@ pPBV <- ggplot(g, aes(x=max.Q, y=est, fill=PBV)) +
                                "French Atlantic",
                                "Iberian Atlantic",
                                "South-eastern Spain"),
-                    name=TeX("Gene pools\ncontributing to the\npartial breeding values:")) + 
-  labs(y        = "Means of the posterior distribution\nof the breeding values", 
+                    name=TeX("Gene pools\ncontributing to the\npartial genetic values:")) + 
+  labs(y        = "Means of the posterior distribution\nof the genetic values", 
        x        = TeX("Dominant gene pool for each genotype")) +
   theme(axis.text = element_text(size=12),
         axis.title = element_text(size=14), 
