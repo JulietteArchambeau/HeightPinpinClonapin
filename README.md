@@ -8,10 +8,10 @@ Here you can find the `html` corresponding to the `.md` files in `HeightPinpinCl
 
 1. In the folder `ExplanatoryVariables`: 
 
-    - [Calculating counts of gPEAs and rPEAs](https://juliettearchambeau.github.io/HeightPinpinClonapin/CalculatingGPEAandRPEA.html)
-    - [Climatic similarity matrices](https://juliettearchambeau.github.io/HeightPinpinClonapin/ClimSimMatrices.html)
-    - [Gene pool-specific genomic relationship matrices](https://juliettearchambeau.github.io/HeightPinpinClonapin/GenePoolSpecificKinshipMatrix.html)
-    - [Calculating the genomic relationship matrice with all gene pools](https://juliettearchambeau.github.io/HeightPinpinClonapin/GenomicRelationshipMatrices.html)
+    - [Calculating counts of gPEAs and rPEAs](https://juliettearchambeau.github.io/HeightPinpinClonapin/docs/CalculatingGPEAandRPEA.html)
+    - [Climatic similarity matrices](https://juliettearchambeau.github.io/HeightPinpinClonapin/docs/ClimSimMatrices.html)
+    - [Gene pool-specific genomic relationship matrices](https://juliettearchambeau.github.io/docs/HeightPinpinClonapin/GenePoolSpecificKinshipMatrix.html)
+    - [Calculating the genomic relationship matrice with all gene pools](https://juliettearchambeau.github.io/docs/HeightPinpinClonapin/GenomicRelationshipMatrices.html)
     
 2. In the folder `ExploringData`:
 
