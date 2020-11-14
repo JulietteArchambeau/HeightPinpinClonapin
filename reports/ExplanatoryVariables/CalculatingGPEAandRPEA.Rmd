@@ -1,5 +1,5 @@
 ---
-title: "Calculating gPEAs and rPEAs"
+title: "Calculating counts of gPEAs and rPEAs"
 author: "Juliette Archambeau"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
@@ -53,14 +53,15 @@ library(compare)
 knitr::opts_chunk$set(cache=F)
 ```
 
-In this script, we create a data frame with the number of positive alleles each gentoype has. @miguelPolygenicAdaptationNegative2020 showed that about 350 SNPs were associated with height in maritime pine. Knowing that, we selected gPEAs and rPEAs in two ways:
+In this document, we calculate the count of global and regional height-associated positive-effect alleles each genotype in each environment. @miguelPolygenicAdaptationNegative2020 showed that about 350 SNPs were associated with height in maritime pine. Knowing that, we selected gPEAs and rPEAs in two ways:
 
   - We selected all SNPs with an absolute posterior effect size larger than .006. This leads to the selection of about 350 SNPs.
   
-  - We selected the first 350 SNPs with the largest absolute posterior effect size. This is the method that was adopted for the manuscript. 
+  - **We selected the first 350 SNPs with the largest absolute posterior effect size. This is the method that was adopted for the manuscript.**
   
 For selected SNPs with a negative effect on height, we inverted the alleles, so that we only considered alleles with a positive effect on height when calcultating the counts. 
 
+> Load data
 
 ```{r  LoadFiles}
 # File with the genotype names (clone names)
@@ -107,7 +108,7 @@ mean(na_col)
 
 
 
-# Calculating the global PEAs
+# Calculating the counts of gPEAs
 
 ## Visualizing piMASS outupts
 
@@ -202,7 +203,7 @@ rethinking::dens(DF$count_all_006)
 ```
 
 
-## Selecting rPEAs (first 350 SNPs)
+## Selecting gPEAs (first 350 SNPs)
 
 ```{r SnpHeightAssociated350AllSites}
 # Snps associated with height
@@ -251,9 +252,11 @@ head(DF)
 ```
 
 
-# In the French Atlantic region
+# Calculate the regional counts of rPEAs
 
-## Visualizing piMASS outupts
+## In the French Atlantic region
+
+### Visualizing piMASS outupts
 
 ```{r LoadPimassOutputsFrenchAtlantic, message=F}
 beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_french_atlantic_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
@@ -299,7 +302,7 @@ beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
 
 
 
-## Selecting rPEAs (betarb>0.006)
+### Selecting rPEAs (betarb>0.006)
 
 
 ```{r SnpHeightAssociatedFrenchAtlantic}
@@ -347,7 +350,7 @@ head(DF)
 ```
 
 
-## Selecting rPEAs (first 350 SNPs)
+### Selecting rPEAs (first 350 SNPs)
 
 ```{r SnpHeightAssociated350FrenchAtlantic}
 # Snps associated with height
@@ -396,9 +399,9 @@ head(DF)
 
 
 
-# In the Iberian Atlantic region
+## In the Iberian Atlantic region
 
-## Visualizing piMASS outupts
+### Visualizing piMASS outupts
 
 ```{r LoadPimassOutputsIberianAtlantic, message=F}
 beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_iberian_atlantic_res.mcmc.txt", "\t", 
@@ -445,7 +448,7 @@ beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
 
 
 
-## Selecting rPEAS (betarb>0.006)
+### Selecting rPEAS (betarb>0.006)
 
 ```{r SnpHeightAssociatedIberianAtlantic}
 # Snps associated with height
@@ -493,7 +496,7 @@ head(DF)
 
 
 
-## Selecting rPEAs (first 350 SNPs)
+### Selecting rPEAs (first 350 SNPs)
 
 
 ```{r SnpHeightAssociated350IberianAtlantic}
@@ -544,9 +547,9 @@ head(DF)
 
 
 
-# In the Mediterranean region
+## In the Mediterranean region
 
-## Visualizing piMASS outupts
+### Visualizing piMASS outupts
 
 ```{r LoadPimassOutputsMed, message=F}
 beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_mediterranean_res.mcmc.txt", "\t", 
@@ -593,7 +596,7 @@ beta.snp[abs(beta.snp$betarb)>0.05|abs(beta.snp$betarb)==0.05,]
 
 
 
-## Selecting rPEAS (betarb>0.006)
+### Selecting rPEAS (betarb>0.006)
 
 
 ```{r SnpHeightAssociatedMed}
@@ -642,7 +645,7 @@ head(DF)
 
 
 
-## Selecting rPEAs (first 350 SNPs)
+### Selecting rPEAs (first 350 SNPs)
 
 ```{r SnpHeightAssociated350Med}
 # Snps associated with height
@@ -694,7 +697,7 @@ sum(is.na(DF))
 
 # Save all
 
-```{r SaveDF}
+```{r SaveDF,eval=F}
 saveRDS(DF,file="../../data/CountPEAs.RDS")
 ```
 
@@ -707,7 +710,7 @@ length(setdiff(names.fr_atl,names.med))
 length(setdiff(names.ib_atl,names.med))
 ```
 
-
+> 69 PEAs shared between Iberian and 192 French Atlantic regions, 41 shared between French Atlantic and Mediterranean regions, and 83 shared between the Iberian Atlantic and Mediterranean regions.
 
 # References
 
