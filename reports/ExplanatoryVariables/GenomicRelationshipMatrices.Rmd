@@ -67,6 +67,9 @@ In this report, we used `piMASS` outputs. `piMASS` (Posterior inference using Mo
 
 GRM = Genomic relationship matrix = kinship matrix with relationship between individuals estimated using genomic markers. 
 
+We calculate first a GRM with all SNPs and then a GRM with SNPs considered as "neutral" according to the `piMASS` ouputs. In the manuscript, we use the GRM based only on "neutral" SNPs. 
+
+
 
 # A GRM with all SNPs
 
