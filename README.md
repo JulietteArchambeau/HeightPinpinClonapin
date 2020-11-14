@@ -8,10 +8,10 @@ Here you can find the `html` corresponding to the `.md` files in `HeightPinpinCl
 
 1. In the folder `ExplanatoryVariables`: 
 
-    - [Calculating counts of gPEAs and rPEAs](https://juliettearchambeau.github.io/HeightPinpinClonapin/CalculatingGPEAandRPEA.html)
     - [Climatic similarity matrices](https://juliettearchambeau.github.io/HeightPinpinClonapin/ClimSimMatrices.html)
-    - [Gene pool-specific genomic relationship matrices](https://juliettearchambeau.github.io/HeightPinpinClonapin/GenePoolSpecificKinshipMatrix.html)
+    - [Calculating counts of gPEAs and rPEAs](https://juliettearchambeau.github.io/HeightPinpinClonapin/CalculatingGPEAandRPEA.html)
     - [Calculating the genomic relationship matrice with all gene pools](https://juliettearchambeau.github.io/HeightPinpinClonapin/GenomicRelationshipMatrices.html)
+    - [Gene pool-specific genomic relationship matrices](https://juliettearchambeau.github.io/HeightPinpinClonapin/GenePoolSpecificKinshipMatrix.html)
     
 2. In the folder `ExploringData`:
 
@@ -20,10 +20,10 @@ Here you can find the `html` corresponding to the `.md` files in `HeightPinpinCl
 
 3. In the folder `ModelOutputsAnalysis`:
 
-    - [Broad-sense heritability estimates](https://juliettearchambeau.github.io/HeightPinpinClonapin/EstimatingHeritability.html)
     - [Model Posterior Distributions - P1 partition](https://juliettearchambeau.github.io/HeightPinpinClonapin/ModelPosteriorDistributionsP1.html)
     - [Model posterior distributions - P2 partition](https://juliettearchambeau.github.io/HeightPinpinClonapin/ModelPosteriorDistributionsP2.html)
     - [Model posterior distributions - P3 partition](https://juliettearchambeau.github.io/HeightPinpinClonapin/ModelPosteriorDistributionsP3.html)
     - [Posterior Predictive Checks and Residuals - P2 partition](https://juliettearchambeau.github.io/HeightPinpinClonapin/PosteriorPredictiveChecks.html)
     - [Predictive Models - Figures](https://juliettearchambeau.github.io/HeightPinpinClonapin/PosteriorPredictiveFigures.html)
+    - [Broad-sense heritability estimates](https://juliettearchambeau.github.io/HeightPinpinClonapin/EstimatingHeritability.html)
     
