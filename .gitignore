@@ -18,12 +18,6 @@
 *.png
 *.svg
 
-# Tables
-*.tex
-
-# Directories
-/doc/*
-
 # Maps
 /maps/*
 
