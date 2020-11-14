@@ -350,10 +350,11 @@ p <- ggplot()+
        x  = TeX("Gene-pool specific broad-sense heritability estimates")) +
   
   theme_bw() + 
-  theme(axis.text = element_text(size=12),
-        axis.title = element_text(size=14), 
-        legend.text = element_text(size=18),
-        legend.title = element_text(size=20)) 
+  theme(axis.text = element_text(size=18),
+        axis.title = element_text(size=18), 
+        legend.text = element_text(size=18,margin = margin(t = 10)),
+        legend.title = element_text(size=20),
+        legend.spacing.y = unit(1, 'cm')) 
 ```
 
 ```{r FigureTeamMeeting29072020,echo=F, warning=F,message=F}
@@ -462,8 +463,8 @@ pPBV <- ggplot(g, aes(x=max.Q, y=est, fill=PBV)) +
                     name=TeX("Gene pools\ncontributing to the\npartial genetic values:")) + 
   labs(y        = "Means of the posterior distribution\nof the genetic values", 
        x        = TeX("Dominant gene pool for each genotype")) +
-  theme(axis.text = element_text(size=12),
-        axis.title = element_text(size=14), 
+  theme(axis.text = element_text(size=14.5),
+        axis.title = element_text(size=20), 
         legend.text = element_text(size=18),
         legend.title = element_text(size=20)) 
 
@@ -473,7 +474,7 @@ pPBV <- ggplot(g, aes(x=max.Q, y=est, fill=PBV)) +
 > Figure in the manuscript 
 
 
-```{r FigureAddGenVarM5, fig.width=10 ,fig.height=9,warning=F,message=F}
+```{r FigureAddGenVarM5, fig.width=12 ,fig.height=12,warning=F,message=F}
 pPBVf <- pPBV + theme(legend.position = "none")
 
 pp <-  ggarrange(p,pPBVf,labels=c("A","B"),nrow=2,heights = c(1, 1.3))
