@@ -1,5 +1,5 @@
 ---
-title: "Gene pool specific total genetic variances"
+title: "Gene pool-specific genomic relationship matrices"
 author: "Juliette Archambeau"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
