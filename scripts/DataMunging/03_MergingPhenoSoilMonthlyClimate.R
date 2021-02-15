@@ -46,8 +46,8 @@ total <- merge(pheno, clim.prov, by="prov")
 
 ### Merge with prov and site soil 
 site_soil <- readRDS(file="data/SiteSoilData.RDS")
-site_soil <- as.tibble(cbind(rownames(site_soil),data.frame(site_soil,row.names = NULL))) %>% 
-  rename(site = "rownames(site_soil)")
+site_soil <- as_tibble(cbind(rownames(site_soil),data.frame(site_soil,row.names = NULL))) %>% 
+  dplyr::rename(site = "rownames(site_soil)")
 total <- merge(total, site_soil,by=c("site","latitude_site","longitude_site"))
 prov_soil <- readRDS(file="data/ProvSoilData.RDS")
 prov_soil <- as.tibble(cbind(rownames(prov_soil),data.frame(prov_soil,row.names = NULL))) %>% 
