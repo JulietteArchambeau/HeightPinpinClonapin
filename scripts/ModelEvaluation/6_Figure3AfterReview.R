@@ -1,8 +1,8 @@
-###############################################################################################"
-##################                                                      #######################"
-##################           Figure 3 after review                      #######################"
-##################                                                      #######################"
-###############################################################################################"
+##############################################################################################################"
+##################                                                                    ########################"
+##################     Fig. to understand gen and env components after review         ########################"
+##################                                                                    ########################"
+##############################################################################################################"
 
 # This figure aims at showing the variance partitioning and understanding the drivers behind the genetic and plastic components.
 
@@ -19,10 +19,11 @@ library(ggplot2)
 library(brms)
 
 
-
 ## Variance partitioning
 
-m2 <- readRDS(file="outputs/models/P1/MOD2.rds")
+name.models <- c("MOD0","MOD1","MOD2")
+models <- lapply(name.models,function(x) readRDS(file=paste0("outputs/models/P1/",x,".rds")))
+names(models)  <- name.models
 
 brms::bayes_R2(m2,re.form=NA)
 brms::bayes_R2(m2,re_formula=~(1|site))
@@ -41,66 +42,75 @@ VarPart <- function(fit) {
   # Explained variance over the phenotypic variance
   ypred <- pp_expect(fit, transform = TRUE)
   var_ypred <- apply(ypred, 1, var)
-  R2all <- mean(var_ypred/var_y)
+  tab <- posterior_summary(var_ypred/var_y,probs = c(0.025, 0.975)) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(param="R2all")
   
   # Variance explained by age over the phenotypic variance
   ypred <- pp_expect(fit, transform = TRUE,re.form=NA)
   var_ypred_age <- apply(ypred, 1, var)
-  R2fix <- mean(var_ypred_age/var_y)
+  tab <- posterior_summary(var_ypred_age/var_y,probs = c(0.025, 0.975)) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(param="R2fix") %>% 
+    bind_rows(tab)
   
   # Variance explained by site/block over the phenotypic variance - variance explained by age
   ypred <- pp_expect(fit, transform = TRUE,re_formula=~(1|site/block))
   var_ypred <- apply(ypred, 1, var)
-  varEnv <- mean((var_ypred-var_ypred_age)/(var_y-var_ypred_age)) # I could add the credible intervals....
+  tab <- posterior_summary((var_ypred-var_ypred_age)/(var_y-var_ypred_age),probs = c(0.025, 0.975)) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(param="varEnv") %>% 
+    bind_rows(tab)
   
   # Variance explained by prov/clon over the phenotypic variance - variance explained by age
   ypred <- pp_expect(fit, transform = TRUE,re_formula=~(1|prov/clon))
   var_ypred <- apply(ypred, 1, var)
-  varGen <- mean((var_ypred-var_ypred_age)/(var_y-var_ypred_age))
+  tab <- posterior_summary((var_ypred-var_ypred_age)/(var_y-var_ypred_age),probs = c(0.025, 0.975)) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(param="varGen") %>% 
+    bind_rows(tab)
   
   # Variance explained by prov:site over the phenotypic variance - variance explained by age
   ypred <- pp_expect(fit, transform = TRUE,re_formula=~(1|prov:site))
   var_ypred <- apply(ypred, 1, var)
-  varGxE <- mean((var_ypred-var_ypred_age)/(var_y-var_ypred_age))
+  tab <- posterior_summary((var_ypred-var_ypred_age)/(var_y-var_ypred_age),probs = c(0.025, 0.975)) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(param="varGxE") %>% 
+    bind_rows(tab)
   
   # Residual and total explained variance over the phenotypic variance - variance explained by age 
   ypred <- pp_expect(fit, transform = TRUE)
   e <- -1 * sweep(ypred, 2, y)
   var_ypred <- apply(ypred, 1, var)
   var_e <- apply(e, 1, var)
-  varTot <- mean((var_ypred-var_ypred_age)/(var_y-var_ypred_age))
-  varRes <- mean((var_e)/(var_y-var_ypred_age))
-  
-  # All in a table
-  tab <- tibble(var_y=var_y,
-            R2all=R2all,
-            R2fix=R2fix,
-            varEnv=varEnv,
-            varGen=varGen,
-            varGxe=varGxE,
-            varTot=varTot,
-            varRes=varRes)
+  tab <- posterior_summary((var_ypred-var_ypred_age)/(var_y-var_ypred_age),probs = c(0.025, 0.975)) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(param="varTot") %>% 
+    bind_rows(tab)
+  tab <- posterior_summary((var_e)/(var_y-var_ypred_age),probs = c(0.025, 0.975)) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(param="varRes") %>% 
+    bind_rows(tab)
 }
 
 
-tab <- VarPart(m2)
+tab <- lapply(models, VarPart)
 
-tablong <- tab %>% dplyr::select(varRes,varEnv,varGen) %>% 
-                   pivot_longer(everything(),names_to="Components",values_to="Proportion")
+tab <- VarPart(m1)
 
-tablong$Components <- as.factor(tablong$Components)
-tablong$Components <- factor(tablong$Components,levels=c("varRes","varEnv","varGen"))
+tabsub <- tab$MOD1 %>% dplyr::filter(param %in% c("varRes","varEnv","varGen")) 
+tabsub$param <- as.factor(tabsub$param)
+tabsub$param <- factor(tabsub$param,levels=c("varRes","varEnv","varGen"))
 
-VarPart <- ggplot(tablong) +
-  geom_col(aes(x = Components, y = Proportion, fill = Components),alpha=0.8) + 
+VarPart <- ggplot(tabsub) +
+  geom_col(aes(x = param, y = Estimate, fill = param),alpha=0.8) + 
   scale_fill_manual(values=c("#EF8A62", "#7FBC41","#67A9CF")) + 
   xlab("") + ylab("Proportion of variance") +
   scale_x_discrete(labels=c("Residual","Environment","Genetic")) +
   theme_bw() +
   theme(legend.position = "none",
-        axis.title = element_text(size=15),
-        axis.text = element_text(size = 15))
-
+        axis.title = element_text(size=25),
+        axis.text = element_text(size = 25))
 
 
 ##### Environmental component
