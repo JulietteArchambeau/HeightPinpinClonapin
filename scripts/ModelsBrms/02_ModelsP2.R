@@ -276,3 +276,23 @@ saveRDS(mod12, file="outputs/models/P2/MOD12.rds")
 # 2: There were 17 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 # 3: Examine the pairs() plot to diagnose sampling problems
+
+
+
+
+#****************************************************************************************************************************** ####
+#          MODEL 14                                                                                                             ####
+
+# We added a supplementary model with both rPEAs and gPEAs after a comment of reviewer #1
+
+
+mod14 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
+               (rPEA.sc + gPEA.sc|site) + (1|block), 
+             
+             prior = c(prior(normal(0, 1), "b"),
+                       prior(normal(0, 5), "Intercept")),
+             
+             data = data, family = "gaussian",
+             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
+saveRDS(mod14, file="outputs/models/P2/MOD14.rds") 
+# 204 transitions that exceeded maximum treepdepth
