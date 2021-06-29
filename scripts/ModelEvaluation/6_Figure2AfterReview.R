@@ -25,11 +25,11 @@ name.models <- c("MOD0","MOD1","MOD2")
 models <- lapply(name.models,function(x) readRDS(file=paste0("outputs/models/P1/",x,".rds")))
 names(models)  <- name.models
 
-brms::bayes_R2(m2,re.form=NA)
-brms::bayes_R2(m2,re_formula=~(1|site))
-brms::bayes_R2(m2,re_formula=~(1|site/block))
-brms::bayes_R2(m2,re_formula=~(1|prov/clon))
-brms::bayes_R2(m2,re_formula=~(1|prov:site))
+# brms::bayes_R2(m2,re.form=NA)
+# brms::bayes_R2(m2,re_formula=~(1|site))
+# brms::bayes_R2(m2,re_formula=~(1|site/block))
+# brms::bayes_R2(m2,re_formula=~(1|prov/clon))
+# brms::bayes_R2(m2,re_formula=~(1|prov:site))
 
 
 ### Function to extract R2 without age
@@ -96,8 +96,7 @@ VarPart <- function(fit) {
 
 tab <- lapply(models, VarPart)
 
-tab <- VarPart(m1)
-
+# We are going to do the graph for M1
 tabsub <- tab$MOD1 %>% dplyr::filter(param %in% c("varRes","varEnv","varGen")) 
 tabsub$param <- as.factor(tabsub$param)
 tabsub$param <- factor(tabsub$param,levels=c("varRes","varEnv","varGen"))
@@ -121,7 +120,7 @@ df <- m3 %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level 
   filter(str_detect(term, "^(r_site\\[)|^(r_site_age\\[)")) %>% 
   mutate(Param = case_when(
       startsWith(term, "r_site[") ~ "Intercepts of the common gardens",
-      startsWith(term, "r_site_age") ~ "Intercepts of the annual climate in the common gardens"),
+      startsWith(term, "r_site_age") ~ "Intercepts of the climate in the common gardens"),
     Site=case_when(
       grepl("bordeaux",term) ~ "Bordeaux",
       grepl("madrid",term) ~ "Madrid",
@@ -130,7 +129,7 @@ df <- m3 %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level 
       grepl("asturias",term)~ "Asturias"))
 
 df$Param <- as.factor(df$Param)
-df$Param <- factor(df$Param,levels=c("Intercepts of the common gardens","Intercepts of the annual climate in the common gardens"))
+df$Param <- factor(df$Param,levels=c("Intercepts of the common gardens","Intercepts of the climate in the common gardens"))
 
 # Parameters of the funtion vir_lite
 source("scripts/Functions/vir_lite.R")
@@ -142,7 +141,7 @@ p <- df %>% ggplot(aes(x = term, y = estimate,ymin = conf.low, ymax = conf.high,
   facet_grid(.~Param,scales="free_y", space = "free") +
   #facet_grid(rows = vars(Param),scales="free_y", space = "free") +
   #facet_wrap(.~Param,scales="free_y",ncol=1) +
-  geom_pointinterval(position = position_dodge(width = .6),point_size=2.5,size=2.5) +
+  geom_pointinterval(position = position_dodge(width = .6),point_size=3.5,size=3.5) +
   ylab("") + xlab("") +
   scale_color_manual(values=c(vir_lite("dodgerblue2",ds=ds),
                              vir_lite("deeppink",ds=ds),
@@ -168,12 +167,12 @@ p <- df %>% ggplot(aes(x = term, y = estimate,ymin = conf.low, ymax = conf.high,
                             'r_site[portugal,Intercept]'=parse(text = TeX("$S_{Portugal}$")))) +
   theme(axis.text = element_text(size=16),
         axis.title = element_text(size=16),
-        legend.title=element_text(size=12), 
-        legend.text=element_text(size=11),
-        legend.position = c(0.88,0.50),
+        legend.title=element_text(size=16), 
+        legend.text=element_text(size=16),
+        legend.position = c(0.85,0.48),
         legend.background = element_rect(colour = "grey"),
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 12),
+        strip.text.x = element_text(size = 16),
         panel.grid.major.y=element_blank()) +
   guides(color=guide_legend(reverse=TRUE))
 
@@ -220,7 +219,7 @@ pprov <- provint %>%
   ggplot(aes(x = reorder(as.factor(term), meanperprov), y =estimate ,ymin = conf.low, ymax = conf.high,color=GP)) +
   coord_flip() +
   facet_grid(.~Param,scales="free_y", space = "free") +
-  geom_pointinterval(position = position_dodge(width = .6),point_size=2.5,size=2.5) +
+  geom_pointinterval(position = position_dodge(width = .6),point_size=3.5,size=3.5) +
   ylab("") + xlab("") +
   theme_bw() +
   scale_color_manual(values=c("orangered3",
@@ -235,7 +234,7 @@ pprov <- provint %>%
         legend.position = "none",
         legend.background = element_rect(colour = "grey"),
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 12),
+        strip.text.x = element_text(size = 15),
         panel.grid.major.y=element_blank())
 
 # Intercepts of the climate-of-origin
@@ -251,7 +250,7 @@ pclim <- provclim %>%
   facet_grid(.~Param,scales="free_y", space = "free") +
   #facet_grid(rows = vars(Param),scales="free_y", space = "free") +
   #facet_wrap(.~Param,scales="free_y",ncol=1) +
-  geom_pointinterval(position = position_dodge(width = .6),point_size=2.5,size=2.5) +
+  geom_pointinterval(position = position_dodge(width = .6),point_size=3.5,size=3.5) +
   ylab("") + xlab("") +
   theme_bw() +
   scale_color_manual(values=c("orangered3",
@@ -266,7 +265,7 @@ pclim <- provclim %>%
         legend.position = "none",
         legend.background = element_rect(colour = "grey"),
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 12),
+        strip.text.x = element_text(size = 15),
         panel.grid.major.y=element_blank())
 
 
@@ -307,7 +306,7 @@ pgp <- gp %>% ggplot(aes(x = reorder(as.factor(term), meanperprov),
   facet_grid(.~Param,scales="free_y", space = "free") +
   #facet_grid(rows = vars(Param),scales="free_y", space = "free") +
   #facet_wrap(.~Param,scales="free_y",ncol=1) +
-  geom_pointinterval(position = position_dodge(width = .6),point_size=2.5,size=2.5) +
+  geom_pointinterval(position = position_dodge(width = .6),point_size=3.5,size=3.5) +
   ylab("") + xlab("") +
   labs(color = "Gene pools") +
   theme_bw() +
@@ -319,14 +318,13 @@ pgp <- gp %>% ggplot(aes(x = reorder(as.factor(term), meanperprov),
                               "orangered3")) +
   theme(axis.text = element_text(size=16),
         axis.title = element_text(size=16),
-        legend.title=element_text(size=18), 
-        legend.text=element_text(size=16),
+        legend.title=element_text(size=24), 
+        legend.text=element_text(size=20),
         legend.position = "bottom",
-        #legend.background = element_rect(colour = "grey"),
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 12),
+        strip.text.x = element_text(size = 15),
         panel.grid.major.y=element_blank()) +
-  guides(color=guide_legend(ncol=1,title.position="top", title.hjust = 0.5))
+  guides(color=guide_legend(ncol=1,title.position="top"))
 
 # Extract legend
 legend <- get_legend(pgp)
@@ -337,9 +335,8 @@ pgp <- plot_grid(pgp,legend,nrow=2)
 GenComp <- plot_grid(pprov,pclim,pgp,nrow=1)
 
 
-Fig3 <- plot_grid(plot_grid(VarPart,EnvComp,nrow=1),GenComp,nrow=2)
+Fig2 <- plot_grid(plot_grid(VarPart,EnvComp,nrow=1),GenComp,nrow=2)
 
-ggsave(Fig3, file="figs/manuscript/Fig3AfterReview.png",width = 16,height=16) 
-ggsave(Fig3,file="figs/manuscript/Fig3AfterReview.pdf", width=16, height=16, labels = c("A) Variance partioning"),
-       label_size = 20)
+ggsave(Fig2, file="figs/manuscript/Fig2AfterReview.png",width = 16,height=16) 
+ggsave(Fig2,file="figs/manuscript/Fig2AfterReview.pdf", width=16, height=16)
 
