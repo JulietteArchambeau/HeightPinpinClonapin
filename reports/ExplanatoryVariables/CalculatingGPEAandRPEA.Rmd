@@ -12,6 +12,8 @@ output:
     number_sections: true
     highlight: textmate
 bibliography: references.bib 
+editor_options: 
+  chunk_output_type: console
 ---
 
 <style>
@@ -49,6 +51,8 @@ library(knitr)
 library(readr)
 library(dplyr)
 library(rethinking)
+library(ggvenn)
+library(cowplot)
 library(compare)
 knitr::opts_chunk$set(cache=F)
 ```
@@ -65,10 +69,10 @@ For selected SNPs with a negative effect on height, we inverted the alleles, so 
 
 ```{r  LoadFiles}
 # File with the genotype names (clone names)
-geno_names <- read.delim2("../../data/ClonapinBlups523IndPiMASSJuly2019.txt", row.names=1)
+geno_names <- read.delim2("data/ClonapinBlups523IndPiMASSJuly2019.txt", row.names=1)
 
 # File with the genotype of each clone for each SNP
-geno <- read.csv("../../data/5165snps523genotypesNA.txt", header=FALSE, row.names=1)
+geno <- read.csv("data/5165snps523genotypesNA.txt", header=FALSE, row.names=1)
 str(geno[,1:20])
 dim(geno) # SNPs in rows, genotypes in columns
 
@@ -113,7 +117,7 @@ mean(na_col)
 ## Visualizing piMASS outupts
 
 ```{r LoadPimassOutputsAllSites, message=F}
-beta.snp <- read_delim("../../data/piMASSoutputs/height_all_sites_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+beta.snp <- read_delim("data/piMASSoutputs/height_all_sites_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
 beta.snp <- as.data.frame(beta.snp)
 row.names(beta.snp) <- beta.snp$rs
 beta.snp$rs <- NULL
@@ -220,6 +224,15 @@ snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
 length(snps.h.neg.350)
 ```
 
+```{r ListPEA}
+# We are going to create a list to compare PEA overlapp and direction of their effect:
+pea.list <- list()
+pea.list$gPEAs <- list(all=rownames(beta.snp.order350),
+                       pos=snps.h.pos.350,
+                       neg=snps.h.neg.350)
+```
+
+
 ```{r CountPositive350snpsAllSites,fig.height=3,fig.width=3}
 # Subset of alleles with positive effect on height
 geno.snp.h.pos.350 <- geno[row.names(geno) %in% snps.h.pos.350,]
@@ -259,7 +272,7 @@ head(DF)
 ### Visualizing piMASS outupts
 
 ```{r LoadPimassOutputsFrenchAtlantic, message=F}
-beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_french_atlantic_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+beta.snp <- read_delim("data/piMASSoutputs/height_french_atlantic_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
 beta.snp <- as.data.frame(beta.snp)
 row.names(beta.snp) <- beta.snp$rs
 beta.snp$rs <- NULL
@@ -365,6 +378,11 @@ length(snps.h.pos.350)
 # Snps negatively associated with height
 snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
 length(snps.h.neg.350)
+
+# Put them in the list for looking at overlapp and direction of effect
+pea.list$rPEAs_FA <- list(all=rownames(beta.snp.order350),
+                          pos=snps.h.pos.350,
+                          neg=snps.h.neg.350)
 ```
 
 ```{r CountPositive350snpsFrenchAtlantic,fig.height=3,fig.width=3}
@@ -404,7 +422,7 @@ head(DF)
 ### Visualizing piMASS outupts
 
 ```{r LoadPimassOutputsIberianAtlantic, message=F}
-beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_iberian_atlantic_res.mcmc.txt", "\t", 
+beta.snp <- read_delim("data/piMASSoutputs/height_iberian_atlantic_res.mcmc.txt", "\t", 
                        escape_double = FALSE, trim_ws = TRUE)
 beta.snp <- as.data.frame(beta.snp)
 row.names(beta.snp) <- beta.snp$rs
@@ -512,6 +530,11 @@ length(snps.h.pos.350)
 # Snps negatively associated with height
 snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
 length(snps.h.neg.350)
+
+# Put them in the list for looking at overlapp and direction of effect
+pea.list$rPEAs_IA <- list(all=rownames(beta.snp.order350),
+                          pos=snps.h.pos.350,
+                          neg=snps.h.neg.350)
 ```
 
 ```{r CountPositive350snpsIberianAtlantic,fig.height=3,fig.width=3}
@@ -552,7 +575,7 @@ head(DF)
 ### Visualizing piMASS outupts
 
 ```{r LoadPimassOutputsMed, message=F}
-beta.snp <- read_delim("../../../data/raw-data/res_analyses-max2000_31072019/height_mediterranean_res.mcmc.txt", "\t", 
+beta.snp <- read_delim("data/piMASSoutputs/height_mediterranean_res.mcmc.txt", "\t", 
                        escape_double = FALSE, trim_ws = TRUE)
 beta.snp <- as.data.frame(beta.snp)
 row.names(beta.snp) <- beta.snp$rs
@@ -660,6 +683,11 @@ length(snps.h.pos.350)
 # Snps negatively associated with height
 snps.h.neg.350 <- row.names(beta.snp.order350[beta.snp.order350$betarb<0,])
 length(snps.h.neg.350)
+
+# Put them in the list for looking at overlapp and direction of effect
+pea.list$rPEAs_Med <- list(all=rownames(beta.snp.order350),
+                          pos=snps.h.pos.350,
+                          neg=snps.h.neg.350)
 ```
 
 ```{r CountPositive350snpsMed,fig.height=3,fig.width=3}
@@ -701,16 +729,94 @@ sum(is.na(DF))
 saveRDS(DF,file="../../data/CountPEAs.RDS")
 ```
 
-# Overlap between the 350 SNPs selected in each region
+# Overlap among rPEAs and gPEAs
 
 
-```{r overlapsrPEAs}
-length(setdiff(names.fr_atl,names.ib_atl))
-length(setdiff(names.fr_atl,names.med))
-length(setdiff(names.ib_atl,names.med))
+```{r VennDiagram, fig.height=8,fig.width=25}
+# # Looking for rPEAs with the same direction across regions
+# ##########################################################
+# # Positive sign
+# length(intersect(pea.list$rPEAs_FA$pos,pea.list$rPEAs_IA$pos))
+# length(intersect(pea.list$rPEAs_Med$pos,pea.list$rPEAs_FA$pos))
+# length(intersect(pea.list$rPEAs_IA$pos,pea.list$rPEAs_Med$pos))
+# 
+# # Negative sign
+# length(intersect(pea.list$rPEAs_FA$neg,pea.list$rPEAs_IA$neg))
+# length(intersect(pea.list$rPEAs_Med$neg,pea.list$rPEAs_FA$neg))
+# length(intersect(pea.list$rPEAs_IA$neg,pea.list$rPEAs_Med$neg))
+# 
+# 
+# # Looking for rPEAs with different direction across regions
+# ###########################################################
+# length(intersect(pea.list$rPEAs_FA$pos,pea.list$rPEAs_IA$neg))
+# length(intersect(pea.list$rPEAs_FA$pos,pea.list$rPEAs_Med$neg))
+# length(intersect(pea.list$rPEAs_IA$pos,pea.list$rPEAs_Med$neg))
+# length(intersect(pea.list$rPEAs_FA$neg,pea.list$rPEAs_IA$pos))
+# length(intersect(pea.list$rPEAs_FA$neg,pea.list$rPEAs_Med$pos))
+# length(intersect(pea.list$rPEAs_IA$neg,pea.list$rPEAs_Med$pos))
+# 
+# 
+# # Looking for common rPEAs across regions
+# #########################################
+# length(intersect(pea.list$rPEAs_FA$all,pea.list$rPEAs_IA$all))
+# length(intersect(pea.list$rPEAs_FA$all,pea.list$rPEAs_Med$all))
+# length(intersect(pea.list$rPEAs_IA$all,pea.list$rPEAs_Med$all))
+
+
+# Venn diagramm with only rPEAs
+###############################
+pos.list <- list("Mediterranean"=pea.list$rPEAs_Med$pos,
+                 "French Atlantic"=pea.list$rPEAs_FA$pos,
+                 "Iberian Atlantic"=pea.list$rPEAs_IA$pos)
+
+neg.list <- list("Mediterranean"=pea.list$rPEAs_Med$neg,
+                 "French Atlantic"=pea.list$rPEAs_FA$neg,
+                 "Iberian Atlantic"=pea.list$rPEAs_IA$neg)
+
+all.list <- list("Mediterranean"=pea.list$rPEAs_Med$all,
+                 "French Atlantic"=pea.list$rPEAs_FA$all,
+                 "Iberian Atlantic"=pea.list$rPEAs_IA$all)
+
+
+p.all <- ggvenn(all.list)
+p.pos <- ggvenn(pos.list)
+p.neg <- ggvenn(neg.list)
+p <- plot_grid(p.all,p.pos,p.neg,
+          nrow=1,
+          labels=c("All SNPs","Positive-effect SNPs","Negative-effect SNPs"),
+          label_size = 20)
+ggsave(p,file="figs/SuppInfo/VennDiagram_rPEAs.png",height=8,width=25)
+p
+
+# Venn diagramm with rPEAs and gPEAs
+####################################
+pos.list <- list("Mediterranean"=pea.list$rPEAs_Med$pos,
+                 "French Atlantic"=pea.list$rPEAs_FA$pos,
+                 "Iberian Atlantic"=pea.list$rPEAs_IA$pos,
+                 "Global"=pea.list$gPEAs$pos)
+
+neg.list <- list("Mediterranean"=pea.list$rPEAs_Med$neg,
+                 "French Atlantic"=pea.list$rPEAs_FA$neg,
+                 "Iberian Atlantic"=pea.list$rPEAs_IA$neg,
+                 "Global"=pea.list$gPEAs$neg)
+
+all.list <- list("Mediterranean"=pea.list$rPEAs_Med$all,
+                 "French Atlantic"=pea.list$rPEAs_FA$all,
+                 "Iberian Atlantic"=pea.list$rPEAs_IA$all,
+                 "Global"=pea.list$gPEAs$all)
+
+
+p.all <- ggvenn(all.list,set_name_size=5)
+p.pos <- ggvenn(pos.list,set_name_size=5)
+p.neg <- ggvenn(neg.list,set_name_size=5)
+p <- plot_grid(p.all,p.pos,p.neg,
+          nrow=1,
+          labels=c("All SNPs","Positive-effect SNPs","Negative-effect SNPs"),
+          label_size = 20)
+ggsave(p,file="figs/SuppInfo/VennDiagram_rPEAs_and_gPEAs.png",height=8,width=25)
+p
 ```
 
-> 69 PEAs shared between Iberian and 192 French Atlantic regions, 41 shared between French Atlantic and Mediterranean regions, and 83 shared between the Iberian Atlantic and Mediterranean regions.
 
 # References
 
