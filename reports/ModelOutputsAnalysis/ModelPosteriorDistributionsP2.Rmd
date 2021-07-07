@@ -10,6 +10,8 @@ output:
        collapsed: false
     number_sections: true
     highlight: textmate
+editor_options: 
+  chunk_output_type: console
 ---
 
 <style>
@@ -68,7 +70,7 @@ library(brms)
 <!-- Functions used -->
 
 ```{r funtions_used}
-source("../../scripts/Functions/vir_lite.R")
+source("scripts/Functions/vir_lite.R")
 square <- function(x) (x*x)
 
 # Parameters of the funtion vir_lite
@@ -97,14 +99,14 @@ prob_outer = 0.99
 
 
 ```{r LoadDATA}
-data <- readRDS(file="../../data/TrainP2.RDS")
+data <- readRDS(file="data/TrainP2.RDS")
 ```
 
 
 # **Model M0**
 
 ```{r loadM0}
-mod <- readRDS(file="../../outputs/models/P2/MOD0.rds")
+mod <- readRDS(file="outputs/models/P2/MOD0.rds")
 ```
 
 
@@ -287,7 +289,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M0_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M0_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -319,7 +321,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(1,0.3,0.7),nrow=3,vjust=c(1.3,0.8,1))
-#ggsave(p,file="../../figs/SuppInfo/M0_PostMainVar_P2.png",height=8) 
+#ggsave(p,file="figs/SuppInfo/M0_PostMainVar_P2.png",height=8) 
 p
 ```
 
@@ -361,7 +363,7 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level
   dplyr::select(Parameter,Median,SD,InfCI,SupCI)
 df %>% knitr::kable(digits = 3 ,format = "markdown") 
 
-# print(xtable(df, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M0_SiteInterceptsPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+# print(xtable(df, type = "latex",digits=3), file = paste0("tables/Posteriors/M0_SiteInterceptsPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -436,7 +438,7 @@ p <- ggplot()+
                      legend.position = "none",plot.title = element_text(size=22))
 
 p
-# ggsave(p,file="../../figs/SuppInfo/M0_SiteInterceptsPost_P2.png",height=7,width=12)
+# ggsave(p,file="figs/SuppInfo/M0_SiteInterceptsPost_P2.png",height=7,width=12)
 ```
 
 
@@ -444,7 +446,7 @@ p
 # **Model M1**
 
 ```{r loadM1}
-mod <- readRDS(file="../../outputs/models/P2/MOD1.rds")
+mod <- readRDS(file="outputs/models/P2/MOD1.rds")
 ```
 
 
@@ -631,7 +633,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M1_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -663,7 +665,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(1,0.3,0.7),nrow=3,vjust=c(1.3,0.8,1))
-#ggsave(p,file="../../figs/SuppInfo/M1_PostMainVar_P2.png",height=8) 
+#ggsave(p,file="figs/SuppInfo/M1_PostMainVar_P2.png",height=8) 
 p
 ```
 
@@ -705,7 +707,7 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level
   dplyr::select(Parameter,Median,SD,InfCI,SupCI)
 df %>% knitr::kable(digits = 3 ,format = "markdown") 
 
-# print(xtable(df, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_SiteInterceptsPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+# print(xtable(df, type = "latex",digits=3), file = paste0("tables/Posteriors/M1_SiteInterceptsPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -780,7 +782,7 @@ p <- ggplot()+
                      legend.position = "none",plot.title = element_text(size=22))
 
 p
-# ggsave(p,file="../../figs/SuppInfo/M1_SiteInterceptsPost_P2.png",height=7,width=12)
+# ggsave(p,file="figs/SuppInfo/M1_SiteInterceptsPost_P2.png",height=7,width=12)
 ```
 
 
@@ -794,7 +796,7 @@ p <- plot(conditional_effects(mod,"age.sc"),plot=FALSE)[[1]] +
   ylab("Logarithm of height (mm)") +
   theme_bw()
 p
-#ggsave(p,file="../../figs/SuppInfo/M1_CondEffectAge_P2.png",height=6,width=6)
+#ggsave(p,file="figs/SuppInfo/M1_CondEffectAge_P2.png",height=6,width=6)
 ```
 
 
@@ -834,7 +836,7 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "mean",conf.int = T) %>%
 
 df %>% knitr::kable(digits = 3 ,format = "markdown")
 
-# print(xtable(df, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M1_ProvInterceptsPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+# print(xtable(df, type = "latex",digits=3), file = paste0("tables/Posteriors/M1_ProvInterceptsPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -935,7 +937,7 @@ p <- ggplot()+
   theme_bw() + theme(axis.text = element_text(size=15),axis.title = element_text(size=14), 
                         legend.text = element_text(size=18),legend.title = element_text(size=20))
 p
-#ggsave(p,file="../../figs/SuppInfo/M1_ProvInterceptsPost_P2.png",height=10,width=10)
+#ggsave(p,file="figs/SuppInfo/M1_ProvInterceptsPost_P2.png",height=10,width=10)
 ```
 
 
@@ -946,7 +948,7 @@ p
 # **Model M2**
 
 ```{r loadM2}
-mod <- readRDS(file="../../outputs/models/P2/MOD2.rds")
+mod <- readRDS(file="outputs/models/P2/MOD2.rds")
 ```
 
 ## Main parameters
@@ -1137,7 +1139,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M2_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M2_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -1170,7 +1172,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(1,0.3,0.7),nrow=3,vjust=c(1.3,0.8,1))
-#ggsave(p,file="../../figs/SuppInfo/M2_PostMainVar_P2.png",height=8) 
+#ggsave(p,file="figs/SuppInfo/M2_PostMainVar_P2.png",height=8) 
 p
 ```
 
@@ -1243,7 +1245,7 @@ colnames(POST) <- str_sub(colnames(POST),8,-12)
 POST <- as.data.frame(t(POST))
 POST$prov <- as.factor(rownames(POST))
 
-data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- readRDS(file="../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
 data <- droplevels(data)
 ps <- data %>%
   group_by(prov) %>% 
@@ -1339,7 +1341,7 @@ colnames(POST) <- str_sub(colnames(POST),13,-21)
 POST <- as.data.frame(t(POST))
 POST$prov <- as.factor(rownames(POST))
 
-data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- readRDS(file="../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
 data <- droplevels(data)
 ps <- data %>%
   group_by(prov) %>% 
@@ -1435,7 +1437,7 @@ colnames(POST) <- str_sub(colnames(POST),13,-20)
 POST <- as.data.frame(t(POST))
 POST$prov <- as.factor(rownames(POST))
 
-data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- readRDS(file="../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
 data <- droplevels(data)
 ps <- data %>%
   group_by(prov) %>% 
@@ -1532,7 +1534,7 @@ colnames(POST) <- str_sub(colnames(POST),13,-19)
 POST <- as.data.frame(t(POST))
 POST$prov <- as.factor(rownames(POST))
 
-data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- readRDS(file="../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
 data <- droplevels(data)
 ps <- data %>%
   group_by(prov) %>% 
@@ -1628,7 +1630,7 @@ colnames(POST) <- str_sub(colnames(POST),13,-21)
 POST <- as.data.frame(t(POST))
 POST$prov <- as.factor(rownames(POST))
 
-data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- readRDS(file="../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
 data <- droplevels(data)
 ps <- data %>%
   group_by(prov) %>% 
@@ -1724,7 +1726,7 @@ colnames(POST) <- str_sub(colnames(POST),13,-21)
 POST <- as.data.frame(t(POST))
 POST$prov <- as.factor(rownames(POST))
 
-data <- readRDS(file="../../../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
+data <- readRDS(file="../data/cleaned-data/datatrain_pheno-clim-soil_20012020_Sample2_75percent.RDS")
 data <- droplevels(data)
 ps <- data %>%
   group_by(prov) %>% 
@@ -1825,7 +1827,7 @@ pp2_madrid <- pm2_madrid + theme(legend.position = "none")
 g <-  ggarrange(pp2_all,pp2_asturias,pp2_bordeaux,pp2_caceres,pp2_portugal,pp2_madrid ,
                 nrow=1)
 g
-#ggsave(g,file="../../figs/SuppInfo/M2_SiteProvIntercepts_P2.png",width=20,height=12) 
+#ggsave(g,file="figs/SuppInfo/M2_SiteProvIntercepts_P2.png",width=20,height=12) 
 ```
 
 
@@ -1833,7 +1835,7 @@ g
 # **MODEL M7**
 
 ```{r loadM7}
-mod <- readRDS(file="../../outputs/models/P2/MOD7.rds") 
+mod <- readRDS(file="outputs/models/P2/MOD7.rds") 
 ```
 
 
@@ -2033,7 +2035,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M7_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M7_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -2071,7 +2073,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
-ggsave(p,file="../../figs/SuppInfo/M7_PostMainVar_P2.png",height=8) 
+ggsave(p,file="figs/SuppInfo/M7_PostMainVar_P2.png",height=8) 
 p
 ```
 
@@ -2318,7 +2320,7 @@ mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
 # **MODEL M8**
 
 ```{r loadM8}
-mod <- readRDS(file="../../outputs/models/P2/MOD8.rds")
+mod <- readRDS(file="outputs/models/P2/MOD8.rds")
 ```
 
 
@@ -2518,7 +2520,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M8_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M8_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -2556,7 +2558,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
-ggsave(p,file="../../figs/SuppInfo/M8_PostMainVar_P2.png",height=8)  
+ggsave(p,file="figs/SuppInfo/M8_PostMainVar_P2.png",height=8)  
 p
 ```
 
@@ -2800,7 +2802,7 @@ mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
 
 
 ```{r loadM9}
-mod <- readRDS(file="../../outputs/models/P2/MOD9.rds")
+mod <- readRDS(file="outputs/models/P2/MOD9.rds")
 ```
 
 ## Main parameters
@@ -2982,7 +2984,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M9_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M9_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -3012,7 +3014,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
-ggsave(p,file="../../figs/SuppInfo/M9_PostMainVar_P2.png",height=8) 
+ggsave(p,file="figs/SuppInfo/M9_PostMainVar_P2.png",height=8) 
 p
 ```
 
@@ -3128,7 +3130,7 @@ pGP <- ggplot()+
                         legend.text = element_text(size=18),legend.title = element_text(size=20))
 
 pGP
-ggsave(pGP, file="../../figs/SuppInfo/M9_GenePoolIntercepts_P2.png",width = 16,height=10)
+ggsave(pGP, file="figs/SuppInfo/M9_GenePoolIntercepts_P2.png",width = 16,height=10)
 ```
 
 
@@ -3136,7 +3138,7 @@ ggsave(pGP, file="../../figs/SuppInfo/M9_GenePoolIntercepts_P2.png",width = 16,h
 # **MODEL M10**
 
 ```{r loadM10}
-mod <- readRDS(file="../../outputs/models/P2/MOD10.rds")
+mod <- readRDS(file="outputs/models/P2/MOD10.rds")
 ```
 
 
@@ -3321,7 +3323,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M10_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M10_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -3353,7 +3355,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
-ggsave(p,file="../../figs/SuppInfo/M10_PostMainVar_P2.png",height=8) 
+ggsave(p,file="figs/SuppInfo/M10_PostMainVar_P2.png",height=8) 
 p
 ```
 
@@ -3508,7 +3510,7 @@ figs.beta <- ggplot()+
                     legend.position = "none", plot.title = element_text(size=22)) 
 
 figs.beta
-ggsave(figs.beta, file="../../figs/SuppInfo/M10_ProvClimateVariablesIntercepts_P2.png",width = 16,height=12)
+ggsave(figs.beta, file="figs/SuppInfo/M10_ProvClimateVariablesIntercepts_P2.png",width = 16,height=12)
 ```
 
 
@@ -3517,7 +3519,7 @@ ggsave(figs.beta, file="../../figs/SuppInfo/M10_ProvClimateVariablesIntercepts_P
 
 
 ```{r loadM11}
-mod <- readRDS(file="../../outputs/models/P2/MOD11.rds")
+mod <- readRDS(file="outputs/models/P2/MOD11.rds")
 ```
 
 
@@ -3697,7 +3699,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M11_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M11_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -3730,7 +3732,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
-ggsave(p,file="../../figs/SuppInfo/M11_PostMainVar_P2.png",height=6) 
+ggsave(p,file="figs/SuppInfo/M11_PostMainVar_P2.png",height=6) 
 p
 ```
 
@@ -3769,7 +3771,9 @@ df %>% knitr::kable(digits = 3 ,format = "markdown")
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
 mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
-                     prob=prob,prob_outer=prob_outer,point_est = "mean") +  theme_bw() +
+                     prob=prob,prob_outer=prob_outer,point_est = "mean") +  
+  theme_bw() +
+  xlim(-0.05,0.25) +
   theme(axis.text = element_text(size=16)) +
   scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Portugal}$")),
                             'r_site[bordeaux,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Bordeaux}$")),
@@ -3833,7 +3837,7 @@ figs.beta <- ggplot()+
   theme_bw() + theme(axis.text = element_text(size=22),axis.title = element_text(size=22), 
                     legend.position = "none", plot.title = element_text(size=22)) 
 figs.beta
-ggsave(figs.beta, file="../../figs/SuppInfo/M11_gpeaIntercepts_P2.png",width = 16,height=12)   
+ggsave(figs.beta, file="figs/SuppInfo/M11_gpeaIntercepts_P2.png",width = 16,height=12)   
 ```
 
 
@@ -3844,7 +3848,7 @@ ggsave(figs.beta, file="../../figs/SuppInfo/M11_gpeaIntercepts_P2.png",width = 1
 
 
 ```{r loadM12}
-mod <- readRDS(file="../../outputs/models/P2/MOD12.rds") 
+mod <- readRDS(file="outputs/models/P2/MOD12.rds") 
 ```
 
 
@@ -4025,7 +4029,7 @@ bind_rows(df,df2) %>%
   knitr::kable(digits = 3 ,format = "markdown")
 
 tab <- bind_rows(df,df2)
-print(xtable(tab, type = "latex",digits=3), file = paste0("../../tables/Posteriors/M12_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
+print(xtable(tab, type = "latex",digits=3), file = paste0("tables/Posteriors/M12_MainVarPost_P2.tex"), include.rownames=FALSE,sanitize.text.function = function(x) {x})
 ```
 
 
@@ -4058,7 +4062,7 @@ p3 <- mod %>%  mcmc_intervals(regex_pars = "^(b_)",
                             "b_Intercept"=parse(text = TeX("$\\beta_{0}$")))) 
 
 p <- ggarrange(p1,p2,p3,labels=c("A","B","C"),font.label = list(size=20),heights = c(0.9,0.35,0.55),nrow=3,vjust=c(1.2,1,1))
-ggsave(p,file="../../figs/SuppInfo/M12_PostMainVar_P2.png",height=6)  
+ggsave(p,file="figs/SuppInfo/M12_PostMainVar_P2.png",height=6)  
 p
 ```
 
@@ -4099,7 +4103,9 @@ df %>% knitr::kable(digits = 3 ,format = "markdown")
 # tocopy <- noquote(str_sub(stri_paste(paste0(par," = ",par2,","),collapse = ""),0,-2))
 
 mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
-                     prob=prob,prob_outer=prob_outer,point_est = "mean") +  theme_bw() +
+                     prob=prob,prob_outer=prob_outer,point_est = "mean") +  
+  theme_bw() +
+  xlim(-0.05,0.25) +
   theme(axis.text = element_text(size=16)) +
   scale_y_discrete(labels=c('r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Portugal}$")),
                             'r_site[bordeaux,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Bordeaux}$")),
@@ -4164,8 +4170,36 @@ figs.beta <- ggplot()+
   theme_bw() + theme(axis.text = element_text(size=22),axis.title = element_text(size=22), 
                     legend.position = "none", plot.title = element_text(size=22)) 
 figs.beta
-ggsave(figs.beta, file="../../figs/SuppInfo/M12_rpeaIntercepts_P2.png",width = 16,height=12)  
+ggsave(figs.beta, file="figs/SuppInfo/M12_rpeaIntercepts_P2.png",width = 16,height=12)  
 ```
 
+
+# **Model M14**
+
+
+```{r loadM14}
+mod <- readRDS(file="outputs/models/P2/MOD14.rds") 
+```
+
+
+## gPEAs and rPEAs
+
+```{r M14BetagPEArPEAFigs,fig.width=8,fig.height=6,warning=F,message=F}
+mod %>%  mcmc_intervals(regex_pars = "^r_site.*PEA.sc\\]",
+                     prob=prob,prob_outer=prob_outer,point_est = "mean") +  
+  theme_bw() +
+  xlim(-0.05,0.25) +
+  theme(axis.text = element_text(size=16)) +
+  scale_y_discrete(labels=c('r_site[portugal,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Portugal}$")),
+                            'r_site[bordeaux,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Bordeaux}$")),
+                            'r_site[asturias,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Asturias}$")),
+                            'r_site[madrid,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Madrid}$")),
+                            'r_site[caceres,gPEA.sc]' = parse(text = TeX("$\\beta_{gPEA,Caceres}$")),
+                            'r_site[portugal,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Portugal}$")),
+                            'r_site[bordeaux,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Bordeaux}$")),
+                            'r_site[asturias,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Asturias}$")),
+                            'r_site[madrid,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Madrid}$")),
+                            'r_site[caceres,rPEA.sc]' = parse(text = TeX("$\\beta_{rPEA,Caceres}$"))))
+```
 
 `r knitr::opts_chunk$set(eval = F)`
