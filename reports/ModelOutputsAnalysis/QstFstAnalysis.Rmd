@@ -1,0 +1,94 @@
+---
+title: "Qst-Fst analysis"
+author: "Juliette Archambeau"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    # code_fold: hide
+    toc: true
+    toc_depth: 4
+    toc_float:
+       collapsed: false
+    number_sections: true
+    highlight: textmate
+editor_options:
+  chunk_output_type: console
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+<style type="text/css">
+div.main-container {
+  max-width: 2000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,cache=F)
+library(dplyr)
+library(tidyverse)
+library(ggpubr)
+library(cowplot)
+library(stringr)
+library(rstanarm)
+library(ggforce)
+library(tidybayes)
+library(latex2exp)
+library(ggplot2)
+library(kableExtra)
+library(brms)
+```
+
+In de Miguel (2021), the global $F_{ST}$ was 0.112 (95% confidence interval: 0.090 - 0.141). According to de Miguel (2021), it "was estimated according to Weir and Cockerham (1984) using the 5,165 SNPs from the Illumina Infinium SNP array and the diveRsity R package (Keenan et al. 2013). The 95% confidence interval of the global $F_{ST}$ estimate was computed by bootstrapping across loci (1,000 bootstrap iterations)."
+
+To calculate the $Q_{ST}$, we use the same formula as in de Miguel (2021), which follows the Spitze (1993), such as:
+
+$$Q_{ST} = \frac{\sigma^2_{P}}{\sigma^2_{P} + 2\sigma^2_{G}} $$
+
+where $\sigma^2_{P}$ is the variance among provenances, and $\sigma^2_{G}$ is the variance among clones (.i.e. genotypes) within provenances.
+
+Quantitative ($Q_{ST}$) and molecular ($F_{ST}$) genetic differentiation among provenances were considered significantly different when $Q_{ST}$ and $F_{ST}$ posterior distributions had non-overlapping 95% confidence intervals.
+
+```{r CalculateQst}
+# Load the M1 model fitted on the P1 partition:
+mod <- readRDS(file="outputs/models/P1/MOD1.rds")
+
+# Extract the standard deviation of the provenances and clones
+sd_prov <- as.array(mod, pars = c("sd_prov__Intercept"), fixed = TRUE) # provenances
+sd_clon <- as.array(mod, pars = c("sd_prov:clon__Intercept"), fixed = TRUE) # clones
+
+# Get the variances
+sigma_prov <- sd_prov*sd_prov
+sigma_clon <- sd_clon*sd_clon
+
+# Calculate the Qst
+qst <- sigma_prov / (sigma_prov + 2 * sigma_clon)
+
+# Extract the 95% confidence interval
+prob=0.95
+probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
+quantile(qst, probs = probs)
+
+# Extract the mean
+median(qst)
+```
+
+
+```{r echo=F}
+low95 <- round(quantile(qst, probs = probs)[[1]],3)
+high95 <- round(quantile(qst, probs = probs)[[2]],3)
+med <- round(median(qst),3)
+```
+
+As $F_{ST}$ = 0.112 [0.090-0.141] has no overlapping interval with $Q_{ST}$ = `r med` [`r low95`-`r high95`], we conclude that they are significantly different, and therefore that there is adaptive differentiation in height growth in our study.
