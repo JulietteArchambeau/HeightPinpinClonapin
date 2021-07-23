@@ -99,13 +99,13 @@ tab <- lapply(models, VarPart)
 # We are going to do the graph for M1
 tabsub <- tab$MOD1 %>% dplyr::filter(param %in% c("varRes","varEnv","varGen")) 
 tabsub$param <- as.factor(tabsub$param)
-tabsub$param <- factor(tabsub$param,levels=c("varRes","varEnv","varGen"))
+tabsub$param <- factor(tabsub$param,levels=c("varGen","varEnv","varRes"))
 
 VarPart <- ggplot(tabsub) +
   geom_col(aes(x = param, y = Estimate, fill = param),alpha=0.8) + 
-  scale_fill_manual(values=c("#EF8A62", "#7FBC41","#67A9CF")) + 
-  xlab("") + ylab("Proportion of variance") +
-  scale_x_discrete(labels=c("Residual","Environment","Genetic")) +
+  scale_fill_manual(values=c("#67A9CF", "#7FBC41","#EF8A62")) + 
+  xlab("") + ylab("Proportion of variance conditional on age") +
+  scale_x_discrete(labels=c("Genetic","Environment","Residual")) +
   theme_bw() +
   theme(legend.position = "none",
         axis.title = element_text(size=25),
@@ -119,17 +119,17 @@ m3 <- readRDS(file="outputs/models/P1/MOD3.rds")
 df <- m3 %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level = 0.95) %>% 
   filter(str_detect(term, "^(r_site\\[)|^(r_site_age\\[)")) %>% 
   mutate(Param = case_when(
-      startsWith(term, "r_site[") ~ "Intercepts of the common gardens",
-      startsWith(term, "r_site_age") ~ "Intercepts of the climate in the common gardens"),
+      startsWith(term, "r_site[") ~ "Sites (common gardens)",
+      startsWith(term, "r_site_age") ~ "Climatic similarity among sites"),
     Site=case_when(
       grepl("bordeaux",term) ~ "Bordeaux",
       grepl("madrid",term) ~ "Madrid",
-      grepl("caceres",term)~ "Caceres",
+      grepl("caceres",term)~ "Cáceres",
       grepl("portugal",term)~ "Portugal",
       grepl("asturias",term)~ "Asturias"))
 
 df$Param <- as.factor(df$Param)
-df$Param <- factor(df$Param,levels=c("Intercepts of the common gardens","Intercepts of the climate in the common gardens"))
+df$Param <- factor(df$Param,levels=c("Sites (common gardens)","Climatic similarity among sites"))
 
 # Parameters of the funtion vir_lite
 source("scripts/Functions/vir_lite.R")
@@ -143,13 +143,14 @@ p <- df %>% ggplot(aes(x = term, y = estimate,ymin = conf.low, ymax = conf.high,
   #facet_wrap(.~Param,scales="free_y",ncol=1) +
   geom_pointinterval(position = position_dodge(width = .6),point_size=3.5,size=3.5) +
   ylab("") + xlab("") +
+  labs(color = "Sites") +
   scale_color_manual(values=c(vir_lite("dodgerblue2",ds=ds),
                              vir_lite("deeppink",ds=ds),
                              vir_lite("pink",ds=ds),
                              vir_lite("navyblue",ds=ds),
                              vir_lite("cyan2",ds=ds))) +
   theme_bw() +
-  scale_x_discrete(labels=c("r_site_age[caceres8,Intercept]"=parse(text = TeX("$cs_{8 months,Caceres}$")),
+  scale_x_discrete(labels=c("r_site_age[caceres8,Intercept]"=parse(text = TeX("$cs_{8 months,Cáceres}$")),
                             "r_site_age[bordeaux25,Intercept]"=parse(text = TeX("$cs_{25months,Bordeaux}$")),
                             "r_site_age[bordeaux37,Intercept]"=parse(text = TeX("$cs_{37months,Bordeaux}$")),
                             "r_site_age[portugal11,Intercept]"=parse(text = TeX("$cs_{11months,Portugal}$")),
@@ -162,7 +163,7 @@ p <- df %>% ggplot(aes(x = term, y = estimate,ymin = conf.low, ymax = conf.high,
                             "r_site_age[asturias37,Intercept]"=parse(text = TeX("$cs_{37months,Asturias}$")),
                             'r_site[asturias,Intercept]'=parse(text = TeX("$S_{Asturias}$")),
                             'r_site[bordeaux,Intercept]'=parse(text = TeX("$S_{Bordeaux}$")),
-                            'r_site[caceres,Intercept]'=parse(text = TeX("$S_{Caceres}$")),
+                            'r_site[caceres,Intercept]'=parse(text = TeX("$S_{Cáceres}$")),
                             'r_site[madrid,Intercept]'=parse(text = TeX("$S_{Madrid}$")),
                             'r_site[portugal,Intercept]'=parse(text = TeX("$S_{Portugal}$")))) +
   theme(axis.text = element_text(size=16),
@@ -172,7 +173,7 @@ p <- df %>% ggplot(aes(x = term, y = estimate,ymin = conf.low, ymax = conf.high,
         legend.position = c(0.85,0.48),
         legend.background = element_rect(colour = "grey"),
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 16),
+        strip.text.x = element_text(size = 19),
         panel.grid.major.y=element_blank()) +
   guides(color=guide_legend(reverse=TRUE))
 
@@ -187,9 +188,9 @@ m6 <- readRDS(file="outputs/models/P1/MOD6.rds")
 df <- m6 %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level = 0.95) %>% 
   filter(str_detect(term, "^r_prov\\[|^r_mmQ1Q2Q3Q4Q5Q6\\[|^r_prov_clim")) %>% 
   mutate(Param = case_when(
-    grepl("mmQ",term) ~ "Intercepts of the gene pools",
-    grepl("r_prov\\[",term) ~ "Intercepts of the provenances",
-    grepl("r_prov_clim",term) ~ "Intercepts of the climate-of-origin"))
+    grepl("mmQ",term) ~ "Gene pools",
+    grepl("r_prov\\[",term) ~ "Provenances",
+    grepl("r_prov_clim",term) ~ "Climate similarity among provenances"))
 
 # extract information on the main gene pool for each provenance
 data <- readRDS(file="data/TrainP1.RDS")
@@ -209,7 +210,7 @@ prov <- df %>%
   left_join(ps[,c("term","GP")],by="term")
 
 # >> Intercepts of the provenances
-provint <- prov %>% filter(Param=="Intercepts of the provenances") %>% 
+provint <- prov %>% filter(Param=="Provenances") %>% 
   group_by(term) %>%
   dplyr::mutate(meanperprov = mean(estimate))%>%
   ungroup()
@@ -234,11 +235,11 @@ pprov <- provint %>%
         legend.position = "none",
         legend.background = element_rect(colour = "grey"),
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 15),
+        strip.text.x = element_text(size = 17),
         panel.grid.major.y=element_blank())
 
 # Intercepts of the climate-of-origin
-provclim <- prov %>% filter(Param=="Intercepts of the climate-of-origin") %>% 
+provclim <- prov %>% filter(Param=="Climate similarity among provenances") %>% 
   group_by(term) %>%
   dplyr::mutate(meanperprov = mean(estimate))%>%
   ungroup()
@@ -265,7 +266,7 @@ pclim <- provclim %>%
         legend.position = "none",
         legend.background = element_rect(colour = "grey"),
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 15),
+        strip.text.x = element_text(size = 17),
         panel.grid.major.y=element_blank())
 
 
@@ -322,7 +323,7 @@ pgp <- gp %>% ggplot(aes(x = reorder(as.factor(term), meanperprov),
         legend.text=element_text(size=20),
         legend.position = "bottom",
         panel.grid.minor.y=element_blank(),
-        strip.text.x = element_text(size = 15),
+        strip.text.x = element_text(size = 17),
         panel.grid.major.y=element_blank()) +
   guides(color=guide_legend(ncol=1,title.position="top"))
 
@@ -337,6 +338,6 @@ GenComp <- plot_grid(pprov,pclim,pgp,nrow=1)
 
 Fig2 <- plot_grid(plot_grid(VarPart,EnvComp,nrow=1),GenComp,nrow=2)
 
-ggsave(Fig2, file="figs/manuscript/Fig2AfterReview.png",width = 16,height=16) 
-ggsave(Fig2,file="figs/manuscript/Fig2AfterReview.pdf", width=16, height=16)
+ggsave(Fig2, file="figs/manuscript/Fig2AfterReview2.png",width = 16,height=16) 
+ggsave(Fig2,file="figs/manuscript/Fig2AfterReview2.pdf", width=16, height=16)
 
