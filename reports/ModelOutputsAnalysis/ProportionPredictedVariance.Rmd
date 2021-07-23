@@ -54,12 +54,12 @@ library(brms)
 
 In this section, we aim to calculate $\mathcal{R}^{2}_{ms}|age$ the proportion of the out-of-sample variance (variance of height growth in the test dataset, here 6 left provenances) that is predicted each model $m$ in each common garden $s$, conditional on the age effect.
 
-For that, we first calculate $Vage_{1s}$, the out-of-sample predicted variance by age **in the M1 model** in each of the common garden, which corresponds to the predicted variance by the fixed effects as there is only the age as fixed effect in this model. 
+For that, we first calculate $V_{\text{age}_{2s}}$, the out-of-sample predicted variance by age **in the M2 model** (the baseline model) in each of the common garden, which corresponds to the predicted variance by the fixed effects as there is only the age as fixed effect in this model. 
 
 Then, we calculate $\mathcal{R}^{2}_{ms}|age$ of model $m$ such as:
 
-$$ \mathcal{R}^{2}_{ms}|age = \frac{Vpred_{ms} - Vage_{1s}}{Vy_{s} -Vage_{1s}}$$
-where $Vy_s$ is the out-of-sample variance in height growth in site $s$ (in the test dataset, i.e. the 6 left provenances) and $Vpred_{ms}$ is the out-of-sample variance predicted by model $m$ in site $s$. 
+$$ \mathcal{R}^{2}_{ms}|age = \frac{V_{\text{pred}_{ms}} - V_{\text{age}_{2s}}}{V_{\text{y}_{s}} -V_{\text{age}_{2s}}}$$
+where $V_{\text{y}_{s}}$ is the out-of-sample variance in height growth in site $s$ (in the test dataset, i.e. the 6 left provenances) and $V_{\text{pred}_{ms}}$ is the out-of-sample variance predicted by model $m$ in site $s$. 
 
 ```{r ChooseBaseline}
 # Which baseline model? 
@@ -158,13 +158,13 @@ df <- lapply(c("P1","P2","P3"),CalculateR2pred)
 
 
 ```{r Vizualization1, fig.height=8,fig.width=10, eval=F}
-mypalette <- c("#D73027", "#F46D43", "#FDAE61" ,"#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1", "#4575B4")
+mypalette <- c( "#F46D43","#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1", "#4575B4")
 
 df[[2]] %>% 
-  dplyr::select(-MOD14) %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
   pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
   mutate(model = paste0("M",str_sub(.$model,4,-1)),
-         model = fct_relevel(model,c(paste0("M",c(0:2,7:12)))),
+         model = fct_relevel(model,c(paste0("M",c(2,7:12)))),
          site=str_to_title(site)) %>% 
   ggplot(aes(fill=model, y=var, x=site)) + 
   geom_bar(position=position_dodge(), stat="identity") +
@@ -182,10 +182,10 @@ df[[2]] %>%
 
 ```{r Vizualization2, fig.height=12,fig.width=6, eval=F}
 df[[2]] %>% 
-  dplyr::select(-MOD14) %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
   pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
   mutate(model = paste0("M",str_sub(.$model,4,-1)),
-         model = fct_relevel(model,c(paste0("M",c(0:2,7:12)))),
+         model = fct_relevel(model,c(paste0("M",c(2,7:12)))),
          site=str_to_title(site)) %>% 
   ggplot(aes(y=var, x=model)) + 
   geom_bar(position=position_dodge(), stat="identity") +
@@ -200,10 +200,10 @@ df[[2]] %>%
         legend.title = element_text(size=20))
 
 df[[2]] %>% 
-  dplyr::select(-MOD14) %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
   pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
   mutate(model = paste0("M",str_sub(.$model,4,-1)),
-         model = fct_relevel(model,c(paste0("M",c(0:2,7:12)))),
+         model = fct_relevel(model,c(paste0("M",c(2,7:12)))),
          site=str_to_title(site)) %>% 
   ggplot(aes(y=var, x=model,fill=model)) + 
   scale_fill_manual(values=mypalette) +
@@ -224,11 +224,11 @@ df <- lapply(c("P3"),CalculateR2)
 
 mypalette <- c( "#F46D43","#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1", "#4575B4")
 
-df[[1]] %>% 
-  dplyr::select(-MOD14,-MOD2,-MOD0) %>% 
+df[[3]] %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
   pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
   mutate(model = paste0("M",str_sub(.$model,4,-1)),
-         model = fct_relevel(model,c(paste0("M",c(1,7:12)))),
+         model = fct_relevel(model,c(paste0("M",c(2,7:12)))),
          site=str_to_title(site)) %>% 
   ggplot(aes(fill=model, y=var, x=site)) + 
   geom_bar(position=position_dodge(), stat="identity") +
@@ -236,7 +236,7 @@ df[[1]] %>%
   labs(fill = "Models") +
   scale_fill_manual(values=mypalette) +
   labs(y=TeX("Proportion of predicted variance $R^{2}_{ms}|age$"),x="") +
-  theme(legend.position = c(0.2,0.9),
+  theme(legend.position = c(0.8,0.9),
         axis.text = element_text(size=13),
         axis.title = element_text(size=22), 
         strip.text.x = element_text(size = 25),
@@ -245,12 +245,11 @@ df[[1]] %>%
   guides(fill=guide_legend(ncol=3))
 
 
-
-p <- df[[1]] %>% 
-  dplyr::select(-MOD0,-MOD2,-MOD0) %>% 
+df[[3]] %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
   pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
   mutate(model = paste0("M",str_sub(.$model,4,-1)),
-         model = fct_relevel(model,c(paste0("M",c(1,7:12)))),
+         model = fct_relevel(model,c(paste0("M",c(2,7:12)))),
          site=str_to_title(site)) %>% 
   ggplot(aes(y=var, x=model,fill=model)) + 
   scale_fill_manual(values=mypalette) +
@@ -264,8 +263,6 @@ p <- df[[1]] %>%
         axis.title = element_text(size=22), 
         legend.text = element_text(size=18),
         legend.title = element_text(size=20))
-
-ggsave(p,file="figs/SuppInfo/ModelComparisonP3AfterReview.png",width = 20,height = 10)
 ```
 
 
@@ -274,6 +271,7 @@ mypalette <- c( "#F46D43","#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1",
 
 p <- df %>% 
   bind_rows() %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
   #dplyr::select(-MOD14,-MOD1,-MOD0,-MOD3,-MOD4,-MOD5,-MOD6,-MOD13) %>% 
   pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
   mutate(model = paste0("M",str_sub(.$model,4,-1)),
@@ -299,12 +297,10 @@ p
 #ggsave(p,file="figs/manuscript/ModelComparisonAfterReview.png",width = 20,height = 15)
 
 # For P1, P2 and P3
-#ggsave(p,file=paste0("figs/manuscript/ModelComparisonP1P2P3AfterReview_",baseline,".png"),width = 20,height = 20)
+# ggsave(p,file=paste0("figs/manuscript/ModelComparisonP1P2P3AfterReview_",baseline,".png"),width = 20,height = 20)
 ```
 
 ## Explicative part
-
-
 
 ```{r CalculateR2explicative}
 CalculateR2exp <- function(part){
@@ -375,6 +371,7 @@ mypalette <- c( "#F46D43","#A6DBA0" ,"#5AAE61","#E0F3F8" , "#ABD9E9", "#74ADD1",
 
 p <- df %>% 
   bind_rows() %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
   pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
   mutate(model = paste0("M",str_sub(.$model,4,-1)),
          model = fct_relevel(model,c(paste0("M",str_sub(baseline,4,-1)),paste0("M",c(7:12)))),
@@ -394,6 +391,7 @@ p <- df %>%
         legend.text = element_text(size=18),
         legend.title = element_text(size=20))
 
+
 p 
 # For P1 and P2
 #ggsave(p,file="figs/manuscript/ModelComparisonAfterReview.png",width = 20,height = 15)
@@ -406,15 +404,15 @@ p
 
 In this section, we aim to calculate $\mathcal{R}^{2}_{mp}|age$ the proportion of the out-of-sample variance (variance of height growth in the test dataset, here 6 left provenances) that is predicted each model $m$ for each provenance $p$, conditional on the age effect.
 
-For that, we first calculate $Vage_{1p}$, the out-of-sample predicted variance by age **in the M1 model** in each of the common garden, which corresponds to the predicted variance by the fixed effects as there is only the age as fixed effect in this model. 
+For that, we first calculate $V_{\text{age}_{1p}}$, the out-of-sample predicted variance by age **in the M1 model** in each of the common garden, which corresponds to the predicted variance by the fixed effects as there is only the age as fixed effect in this model. 
 
 Then, we calculate $\mathcal{R}^{2}_{mp}|age$ of model $m$ such as:
 
-$$ \mathcal{R}^{2}_{mp}|age = \frac{Vpred_{mp} - Vage_{1p}}{Vy_{p} -Vage_{1p}}$$
-where $Vy_p$ is the out-of-sample variance in height growth in the provenance $p$ (in the test dataset) and $Vpred_{mp}$ is the out-of-sample variance predicted by model $m$ in provenance $p$. 
+$$ \mathcal{R}^{2}_{mp}|age = \frac{V_{\text{pred}_{mp}} - V_{\text{age}_{2p}}}{V_{\text{y}_{p}} -V_{\text{age}_{2p}}}$$
+where $V_{\text{y}_{p}}$ is the out-of-sample variance in height growth in the provenance $p$ (in the test dataset) and $V_{\text{pred}_{mp}}$ is the out-of-sample variance predicted by model $m$ in provenance $p$. 
+
 
 ## Predictive part
-
 
 ```{r CalculateR2predProv}
 CalculateR2pred <- function(part){
@@ -475,8 +473,6 @@ df <- df %>%
   dplyr::select(prov,everything()) %>% 
   mutate(partition=part)
 }
-
-df <- CalculateR2pred("P2")
 ```
 
 
