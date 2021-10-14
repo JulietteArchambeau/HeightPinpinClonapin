@@ -48,6 +48,7 @@ library(latex2exp)
 library(ggplot2)
 library(kableExtra)
 library(brms)
+library(ggExtra)
 ```
 
 # In each common garden
@@ -300,6 +301,38 @@ p
 # ggsave(p,file=paste0("figs/manuscript/ModelComparisonP1P2P3AfterReview_",baseline,".png"),width = 20,height = 20)
 ```
 
+
+```{r Visualization5,fig.height=12,fig.width=10}
+# Figure asked by the Co-editor of the American Naturalist
+p <- df %>% 
+  bind_rows() %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
+  pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
+  mutate(model = paste0("M",str_sub(.$model,4,-1)),
+         model = fct_relevel(model,c(paste0("M",str_sub(baseline,4,-1)),paste0("M",c(7:12)))),
+         site=str_to_title(site)) %>% 
+  
+  ggplot(aes(site,model,fill=var))+
+  geom_tile(color= "white",size=0.1,width =0.8) + 
+  scale_fill_gradient(low = "gray94", high = "forestgreen",limits=c(0, 0.4), breaks=seq(0,0.4,by=0.05)) +
+  facet_grid(rows = vars(partition),scales="fixed", space = "fixed") +
+  theme_minimal()+
+  labs(fill=TeX("prediction $R^{2}_{ms}|age$")) +
+  removeGrid() + 
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        strip.text.x = element_text(size = 25),
+        strip.text.y = element_text(size=25,angle = 0),
+        axis.title = element_blank(), 
+        legend.text = element_text(size=18),
+        legend.title = element_text(size=18))  +
+  guides(fill = guide_colourbar(barwidth = 1, barheight = 20,title.vjust = 3))
+
+p
+ggsave(p,file=paste0("figs/manuscript/ModelComparisonP1P2P3AfterReview2_",baseline,".png"),width = 10,height = 12)
+```
+
+
 ## Explicative part
 
 ```{r CalculateR2explicative}
@@ -398,6 +431,36 @@ p
 
 # For P1, P2 and P3
 # ggsave(p,file=paste0("figs/SuppInfo/ModelComparison_ExplicativePart_AfterReview_",baseline,".png"),width = 20,height = 20)
+```
+
+```{r VisualizationExplicativePart2,fig.height=10,fig.width=12}
+# Figure asked by the Co-editor of the American Naturalist
+p <- df %>% 
+  bind_rows() %>% 
+  mutate(site=replace(site, site=="caceres", "Cáceres")) %>% 
+  pivot_longer(cols=contains("MOD"),names_to = "model",values_to="var") %>% 
+  mutate(model = paste0("M",str_sub(.$model,4,-1)),
+         model = fct_relevel(model,c(paste0("M",str_sub(baseline,4,-1)),paste0("M",c(7:12)))),
+         site=str_to_title(site)) %>% 
+  
+  ggplot(aes(site,model,fill=var))+
+  geom_tile(color= "white",size=0.1,width =0.8) + 
+  scale_fill_gradient(low = "gray94", high = "forestgreen",limits=c(0, 0.4), breaks=seq(0,0.4,by=0.05)) +
+  facet_grid(rows = vars(partition),scales="fixed", space = "fixed") +
+  theme_minimal()+
+  labs(fill=TeX("$R^{2}_{ms}|age$")) +
+  removeGrid() + 
+  theme(axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size=18),
+        strip.text.x = element_text(size = 25),
+        strip.text.y = element_text(size=25,angle = 0),
+        axis.title = element_blank(), 
+        legend.text = element_text(size=18),
+        legend.title = element_text(size=20))  +
+  guides(fill = guide_colourbar(barwidth = 1, barheight = 20,title.vjust = 3))
+
+p
+ggsave(p,file=paste0("figs/manuscript/ModelComparison_ExplicativePart_AfterReview2_",baseline,".png"),width = 10,height = 12)
 ```
 
 # In each provenance
