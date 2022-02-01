@@ -111,7 +111,8 @@ dataDryad <- data %>%
                 latitude_prov,longitude_prov, # coord of the provenances
                 age,height,
                 pre_summer_min_site, pre_mean_1y_site, tmn_min_1y_site, tmx_max_1y_site, pre_max_1y_site, tmx_mean_1y_site, # climatic variables of the test sites
-                bio1_prov, bio5_prov, bio12_prov, bio14_prov # climatic variables of the provenances
+                bio1_prov, bio5_prov, bio12_prov, bio14_prov, # climatic variables of the provenances
+                Q1, Q2, Q3, Q4, Q5, Q6, max.Qvalue, max.Q     # proportion of gene pool assignement for each genotype (to account for population genetic structure)
                 ) %>% 
   dplyr::mutate(P1 = case_when(obs %in% (readRDS(file = "data/TrainP1.RDS") %>% dplyr::select(obs) %>% pull()) ~ "train",
                                obs %in% (readRDS(file = "data/TestP1.RDS") %>% dplyr::select(obs) %>% pull()) ~ "test"),
