@@ -1,0 +1,73 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+# Data and code for the paper: 'Combining climatic and genomic data improves range-wide tree height growth prediction in a forest tree'
+
+**Authors:** Juliette Archambeau$^1$, Marta Benito Garzón$^1$, Frédéric Barraquand$^2$, Marina de Miguel Vega$^{1,3}$, Christophe Plomion$^1$ and Santiago C. González-Martínez$^1$
+
+**1** INRAE, Univ. Bordeaux, BIOGECO, F-33610 Cestas, France
+
+**2** CNRS, Institute of Mathematics of Bordeaux, F-33400 Talence, France
+
+**3** EGFV, Univ. Bordeaux, Bordeaux Sciences Agro, INRAE, ISVV, F-33882, Villenave d’Ornon, France
+
+
+**Published in *The American Naturalist* ** (manuscript # 60477R2)
+
+## Data
+
+### Height and climatic data 
+
+**From the dataset `HeightClimateSoilData_33121obs_25variables.csv`.**
+
+
+The 33,121 height observations comes from 5 common gardens of the CLONAPIN network, consisting of 34 populations (i.e. provenances) and 523 clones (i.e. genotypes). 
+
+Annual and monthly climatic data were extracted from the [EuMedClim database at 1-km resolution](https://gentree.data.inra.fr/climate/). The scripts for the extraction can be found here: [monthly data for climate in the test sites](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/01_ExtractingMonthlyClimateEuMedClimData.R) and [annual data for climate in the provenances](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/01_ExtractingAnnualClimateEuMedClimData.R). We calculated six variables that describe extreme and average temperature and precipitation conditions in the test sites during the year preceding the measurements ([script available here](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/02_CalculatingSiteMonthlyClimaticVariables.R)) and four variables that describe the mean temperature and precipitation in the provenance locations over the period from 1901 to 2009, representing the climate under which provenances have evolved ([script available here](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/02_CalculatingProvAnnualClimaticVariables.R)).
+
+
+Meaning of the columns:
+
+  - `obs`: unique code differentiating each observation (i.e. each height measurement)
+  - `tree`: tree identity
+  - `site`: test site (common garden)
+  - `clon`: clone (i.e. genotype)
+  - `prov`: provenance (i.e. population)
+  - `latitude_site`: latitude of the test site (in degrees)
+  - `longitude_site`: longitude of the test site (in degrees)
+  - `latitude_prov`: latitude of the provenance (in degrees)
+  - `longitude_prov`: longitude of the provenance (in degrees)
+  - `age`: tree age when the measurement was taken (in months)
+  - `height`: tree height (in mm)
+  - `pre_summer_min_site` (*min.presummer* in the manuscript): minimum of the monthly precipitation during summer -June to September- in the test sites (°C)
+  - `pre_mean_1y_site` (*mean.pre* in the manuscript): mean of the monthly precipitation in the test sites (mm)
+  - `tmn_min_1y_site` (*min.tmn* in the manuscript):  minimum of the monthly minimum temperatures in the test sites (°C)
+  - `tmx_max_1y_site` (*max.tmx* in the manuscript): maximum of the monthly maximum temperatures in the test sites (°C)
+  - `pre_max_1y_site` (*max.pre* in the manuscript): maximum of the monthly precipitation in the test sites (mm)
+  - `tmx_mean_1y_site` (*mean.tmax* in the manuscript): mean of monthly maximum temperatures in the test sites (°C)
+  - `bio1_prov` (*mean.temp* in the manuscript): average of the annual daily mean temperature in the provenances (°C).
+  - `bio5_prov` (*max.temp* in the manuscript): average of the maximum temperature of the warmest month in the provenances (°C).
+  - `bio12_prov` (*min.pre* in the manuscript): average of the precipitation of the driest month in the provenances (mm).
+  - `bio14_prov` (*mean.pre* in the manuscript): average of the annual precipitation in the provenances (mm).
+  - `Q1`: proportion of assignment to the northern African (NA) gene pool for each clone.
+  - `Q2`: proportion of assignment to the Corsican (C) gene pool for each clone.
+  - `Q3`: proportion of assignment to the central Spain (CS) gene pool for each clone.
+  - `Q4`: proportion of assignment to the French Atlantic (FA) gene pool for each clone.
+  - `Q5`: proportion of assignment to the Iberian Atlantic (IA) gene pool for each clone.
+  - `Q6`: proportion of assignment to the south-eastern Spain (SES) gene pool for each clone.
+  - `max.Qvalue`: proportion of assignment to the main gene pool for each clone.
+  - `max.Q`: main gene pool for each clone.
+  - `P1`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P1 partition.
+  - `P2`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P2 partition.
+  - `P3`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P3 partition.
+  
+  
+
+
+## Code
+
+It was run on *R version 3.6.3* and *RStudio version 1.1.463*.
+
+The code included in this repository constitutes the code necessary to replicate the analyses in the paper published in *The American Naturalist* from the data in this same repository. An extended version of the code can be found in the github repository [https://github.com/JulietteArchambeau/HeightPinpinClonapin](https://github.com/JulietteArchambeau/HeightPinpinClonapin), where data sorting from a larger phenotypic database (inlcuding all traits measured in the common gardens of the [CLONAPIN network](https://www6.bordeaux-aquitaine.inrae.fr/biogeco/Ressources/In-situ-dispositifs-de-terrain-observation-experimentation/Tests-de-provenances/CLONAPIN)), climate and soil data extraction,additional exploratory analyses, model output analyses and visualizations are included.
