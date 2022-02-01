@@ -109,7 +109,7 @@ dataDryad <- data %>%
   dplyr::select(obs,tree,site,clon,prov,      # variables related to the experimental design
                 latitude_site,longitude_site, # coord of the common gardens
                 latitude_prov,longitude_prov, # coord of the provenances
-                age,height,survival,
+                age,height,
                 pre_summer_min_site, pre_mean_1y_site, tmn_min_1y_site, tmx_max_1y_site, pre_max_1y_site, tmx_mean_1y_site, # climatic variables of the test sites
                 bio1_prov, bio5_prov, bio12_prov, bio14_prov # climatic variables of the provenances
                 ) %>% 
