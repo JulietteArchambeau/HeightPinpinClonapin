@@ -123,4 +123,4 @@ dataDryad <- data %>%
 
 write.csv(dataDryad,
           file= paste0("data_DRYAD/HeightClimateSoilData_",nrow(dataDryad),"obs_",ncol(dataDryad),"variables.csv"),
-          row.names=T)
+          row.names=F)
