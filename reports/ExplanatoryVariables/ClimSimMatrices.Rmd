@@ -12,6 +12,8 @@ output:
     number_sections: true
     highlight: textmate
 bibliography: references.bib 
+editor_options: 
+  chunk_output_type: console
 ---
 
 <style>
@@ -46,21 +48,21 @@ pre[class] {
 
 ```{r setup, include=FALSE}
 options(width = 300)
-library(knitr)
-library(readr)
-library(cowplot)
-library(ggplot2)
-library(dplyr)
-library(gplots)
-library(usdm)
-library(devtools)
-library(ggbiplot)
-library(arm)
-library(Matrix)
-library(matrixcalc)
-library(compare)
-library(RColorBrewer)
-library(MASS)
+library(knitr)        # CRAN v1.26
+library(readr)        # CRAN v1.3.1
+library(cowplot)      # CRAN v1.0.0
+library(ggplot2)      # CRAN v3.3.1
+library(dplyr)        # CRAN v1.0.0
+library(gplots)       # CRAN v3.0.1.2
+library(usdm)         # CRAN v1.1-18
+library(devtools)     # CRAN v2.2.1
+library(ggbiplot)     # [github::vqv/ggbiplot] v0.55
+library(arm)          # CRAN v1.10-1
+library(Matrix)       # CRAN v1.2-18
+library(matrixcalc)   # CRAN v1.0-3
+library(compare)      # CRAN v0.2-6
+library(RColorBrewer) # CRAN v1.1-2
+library(MASS)         # CRAN v7.3-51.5
 knitr::opts_chunk$set(fig.width = 12,cache=FALSE)
 options(width = 150)
 ```
@@ -68,7 +70,7 @@ options(width = 150)
 <!-- Functions used -->
 
 ```{r FuntionsUsed,echo=F}
-source("../../scripts/Functions/corpmat.R")
+source("scripts/Functions/corpmat.R")
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 ```
 
@@ -78,7 +80,7 @@ col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA")
 
 
 ```{r LoadDataSites}
-data <- readRDS(file="../../data/TrainP1.RDS")
+data <- readRDS(file="data/TrainP1.RDS")
 ```
 
 Let's create a column to identify unique site + year of measurement (= different age of the trees).
@@ -217,7 +219,7 @@ round(euclimat,3)
 ```
 
 ```{r SaveEucliMatrixSites}
-# saveRDS(euclimat, file = "../../data/EnvMat/EucliMatrixSites.rds")
+# saveRDS(euclimat, file = "data/EnvMat/EucliMatrixSites.rds")
 ```
 
 
@@ -240,7 +242,7 @@ heatmap.2(as.matrix(varmat),scale="none",
 ```
 
 ```{r SaveHeatmapVarCovMatrixSites, echo=F,message=F}
-png("../../figs/SuppInfo/ExploringData/VarCovMatrixSites.png",width = 800,height=800)
+png("figs/SuppInfo/ExploringData/VarCovMatrixSites.png",width = 800,height=800)
 heatmap.2(as.matrix(varmat),scale="none",
           col=brewer.pal(11,"RdBu"),
           trace="none",key=F,
@@ -259,7 +261,7 @@ varmat.pd
 
 
 ```{r SavePosDefVarCovMatrixSites}
-# saveRDS(varmat.pd, file = "../../data/cleaned-data/EnvMat/VarCovMatSites.rds")
+# saveRDS(varmat.pd, file = "data/EnvMat/VarCovMatSites.rds")
 ```
 
 
@@ -270,7 +272,7 @@ varmat.pd
 
 
 ```{r LoadDataProvenancesP1}
-data <- readRDS(file="../../data/TrainP1.RDS")
+data <- readRDS(file="data/TrainP1.RDS")
 ```
 
 
@@ -403,7 +405,7 @@ round(euclimat,3)[1:10,1:10]
 ```
 
 ```{r SaveEucliMatrixProvenancesP1}
-# saveRDS(euclimat, file = "../../data/EnvMat/EucliMatrixProvenancesP1.rds")
+# saveRDS(euclimat, file = "data/EnvMat/EucliMatrixProvenancesP1.rds")
 ```
 
 
@@ -426,7 +428,7 @@ heatmap.2(as.matrix(varmat),scale="none",
 ```
 
 ```{r SaveHeatmapVarCovMatrixProvenancesP1, echo=F,message=F}
-png("../../figs/SuppInfo/ExploringData/VarCovMatrixProvenancesP1.png",width = 1200,height=1200)
+png("figs/SuppInfo/ExploringData/VarCovMatrixProvenancesP1.png",width = 1200,height=1200)
 heatmap.2(as.matrix(varmat),scale="none",
           col=brewer.pal(11,"RdBu"),
           trace="none",key=F,
@@ -444,7 +446,7 @@ all.equal(as.matrix(varmat.pd),varmat)
 
 
 ```{r SavePosDefVarCovMatrixProvenancesP1}
-# saveRDS(varmat.pd, file = "../../data/cleaned-data/EnvMat/VarCovMatProvenancesP1.rds")
+# saveRDS(varmat.pd, file = "data/EnvMat/VarCovMatProvenancesP1.rds")
 ```
 
 
@@ -456,7 +458,7 @@ all.equal(as.matrix(varmat.pd),varmat)
 
 
 ```{r LoadDataProvenancesP2}
-data <- readRDS(file="../../data/TrainP1.RDS")
+data <- readRDS(file="data/TrainP2.RDS")
 ```
 
 
@@ -554,7 +556,7 @@ cor(data[,select.var])
 ```
 
 ```{r VIFProvenancesP2}
-vif(data[,select.var])
+vif(as.data.frame(data[,select.var]))
 ```
 
 ## Matrices of environmental similarity
@@ -589,7 +591,7 @@ round(euclimat,3)[1:10,1:10]
 ```
 
 ```{r SaveEucliMatrixProvenancesP2}
-# saveRDS(euclimat, file = "../../data/EnvMat/EucliMatrixProvenancesP2.rds")
+# saveRDS(euclimat, file = "data/EnvMat/EucliMatrixProvenancesP2.rds")
 ```
 
 
@@ -612,7 +614,7 @@ heatmap.2(as.matrix(varmat),scale="none",
 ```
 
 ```{r SaveHeatmapVarCovMatrixProvenancesP2, echo=F,message=F}
-png("../../figs/SuppInfo/ExploringData/VarCovMatrixProvenancesP2.png",width = 1200,height=1200)
+png("figs/SuppInfo/ExploringData/VarCovMatrixProvenancesP2.png",width = 1200,height=1200)
 heatmap.2(as.matrix(varmat),scale="none",
           col=brewer.pal(11,"RdBu"),
           trace="none",key=F,
@@ -630,7 +632,7 @@ all.equal(as.matrix(varmat.pd),varmat)
 
 
 ```{r SavePosDefVarCovMatrixProvenancesP2}
-# saveRDS(varmat.pd, file = "../../data/cleaned-data/EnvMat/VarCovMatProvenancesP2.rds")
+# saveRDS(varmat.pd, file = "data/EnvMat/VarCovMatProvenancesP2.rds")
 ```
 
 `r knitr::opts_chunk$set(eval = F)`
