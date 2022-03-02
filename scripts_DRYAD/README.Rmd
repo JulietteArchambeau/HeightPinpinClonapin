@@ -20,13 +20,14 @@ output:
 
 ### Height and climatic data 
 
-**From the dataset `HeightClimateSoilData_33121obs_25variables.csv`.**
+**In the dataset `HeightClimateSoilData_33121obs_25variables.csv`.**
 
 
 The 33,121 height observations comes from 5 common gardens of the CLONAPIN network, consisting of 34 populations (i.e. provenances) and 523 clones (i.e. genotypes). 
 
 Annual and monthly climatic data were extracted from the [EuMedClim database at 1-km resolution](https://gentree.data.inra.fr/climate/). The scripts for the extraction can be found here: [monthly data for climate in the test sites](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/01_ExtractingMonthlyClimateEuMedClimData.R) and [annual data for climate in the provenances](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/01_ExtractingAnnualClimateEuMedClimData.R). We calculated six variables that describe extreme and average temperature and precipitation conditions in the test sites during the year preceding the measurements ([script available here](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/02_CalculatingSiteMonthlyClimaticVariables.R)) and four variables that describe the mean temperature and precipitation in the provenance locations over the period from 1901 to 2009, representing the climate under which provenances have evolved ([script available here](https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/scripts/DataMunging/02_CalculatingProvAnnualClimaticVariables.R)).
 
+Missing data are indicated with *NA*. 
 
 Meaning of the columns:
 
@@ -41,16 +42,16 @@ Meaning of the columns:
   - `longitude_prov`: longitude of the provenance (in degrees)
   - `age`: tree age when the measurement was taken (in months)
   - `height`: tree height (in mm)
-  - `pre_summer_min_site` (*min.presummer* in the manuscript): minimum of the monthly precipitation during summer -June to September- in the test sites (°C)
-  - `pre_mean_1y_site` (*mean.pre* in the manuscript): mean of the monthly precipitation in the test sites (mm)
-  - `tmn_min_1y_site` (*min.tmn* in the manuscript):  minimum of the monthly minimum temperatures in the test sites (°C)
-  - `tmx_max_1y_site` (*max.tmx* in the manuscript): maximum of the monthly maximum temperatures in the test sites (°C)
-  - `pre_max_1y_site` (*max.pre* in the manuscript): maximum of the monthly precipitation in the test sites (mm)
-  - `tmx_mean_1y_site` (*mean.tmax* in the manuscript): mean of monthly maximum temperatures in the test sites (°C)
-  - `bio1_prov` (*mean.temp* in the manuscript): average of the annual daily mean temperature in the provenances (°C).
-  - `bio5_prov` (*max.temp* in the manuscript): average of the maximum temperature of the warmest month in the provenances (°C).
-  - `bio12_prov` (*min.pre* in the manuscript): average of the precipitation of the driest month in the provenances (mm).
-  - `bio14_prov` (*mean.pre* in the manuscript): average of the annual precipitation in the provenances (mm).
+  - `pre_summer_min_site` (*min.presummer* in the manuscript): minimum of the monthly precipitation during summer -June to September- in the test sites during the year preceding the measurement (°C)
+  - `pre_mean_1y_site` (*mean.pre* in the manuscript): mean of the monthly precipitation in the test sites during the year preceding the measurement (mm)
+  - `tmn_min_1y_site` (*min.tmn* in the manuscript):  minimum of the monthly minimum temperatures in the test sites during the year preceding the measurement (°C)
+  - `tmx_max_1y_site` (*max.tmx* in the manuscript): maximum of the monthly maximum temperatures in the test sites during the year preceding the measurement (°C)
+  - `pre_max_1y_site` (*max.pre* in the manuscript): maximum of the monthly precipitation in the test sites during the year preceding the measurement (mm)
+  - `tmx_mean_1y_site` (*mean.tmax* in the manuscript): mean of monthly maximum temperatures in the test sites during the year preceding the measurement (°C)
+  - `bio1_prov` (*mean.temp* in the manuscript): average of the annual daily mean temperature in the provenances over the period from 1901 to 2009 (°C).
+  - `bio5_prov` (*max.temp* in the manuscript): average of the maximum temperature of the warmest month in the provenances over the period from 1901 to 2009 (°C).
+  - `bio12_prov` (*min.pre* in the manuscript): average of the precipitation of the driest month in the provenances over the period from 1901 to 2009 (mm).
+  - `bio14_prov` (*mean.pre* in the manuscript): average of the annual precipitation in the provenances over the period from 1901 to 2009 (mm).
   - `Q1`: proportion of assignment to the northern African (NA) gene pool for each clone.
   - `Q2`: proportion of assignment to the Corsican (C) gene pool for each clone.
   - `Q3`: proportion of assignment to the central Spain (CS) gene pool for each clone.
@@ -63,8 +64,38 @@ Meaning of the columns:
   - `P2`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P2 partition.
   - `P3`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P3 partition.
   
-  
 
+
+### Genomic data 
+
+**In the dataset `GenomicData_5165SNPs_523clones.csv`.**
+
+This file contains the genotype (noted as 0, 1 or 2) of each clone. There are 5,165 SNPs in rows and 523 clones in columns. Missing data are indicated with *NA*. 
+
+
+### piMASS outputs from de [Miguel et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16367?casa_token=1nNTc88Iy40AAAAA%3ALd4EOK5ehk_cEHIkw5A9l8nk0NPzUzlYPX8eAjVCikIjHP0WJ1kxoHJSZjMLFsZcP-8wdbNuNrlOfp1jzw)
+
+**In the dataset `height_all_sites_res.mcmc.txt`.**
+
+This file corresponds to the piMASS outputs of the Bayesian variable selection regression [VSR] implemented in the piMASS software ([Guan & Stephens 2011](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-5/issue-3/Bayesian-variable-selection-regression-for-genome-wide-association-studies-and/10.1214/11-AOAS455.full)) and which allows the identification of SNPs associated with the phenotype (here BLUPs for height estimated across the five CLONAPIN common gardens). 
+
+Accroding the [piMASS manual](https://www.haplotype.org/download/pimass-manual.pdf), the output file contains:
+
+  - `rs`: SNP ID.
+  - `chr`: chromosome (no information on it in Miguel et al. 2022, so there are only '0').
+  - `pos`: position.
+  - `postc`: estimates of the posterior inclusion probabilities based on simple counting.
+  - `postrb`: estimates of the posterior inclusion probabilities based on Rao-Blackwellization.
+  - `beta`: the naive estimates of the posterior effect size.
+  - `betarb`: **Rao-Blackwellized estimates of the posterior effect size, that are used in the present study to differentiate height-associated SNPs from SNPs not associated with height (i.e. 'neutral' SNPs).**
+
+## Intermediate files
+
+### Gene pool-specific GRMs
+
+**Files `GRM_AX.csv`, with *X* being the gene pool number.**
+
+The gene pool-specific genomic relationship matrices (GRM) are calculated in the script `2_CalculateGenePoolSpecificGRM.R` and are then used when fitting *model M5*.
 
 ## Code
 
