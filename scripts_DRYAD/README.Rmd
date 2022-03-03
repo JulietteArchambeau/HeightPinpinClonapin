@@ -75,11 +75,16 @@ This file contains the genotype (noted as 0, 1 or 2) of each clone. There are 5,
 
 ### piMASS outputs from de [Miguel et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16367?casa_token=1nNTc88Iy40AAAAA%3ALd4EOK5ehk_cEHIkw5A9l8nk0NPzUzlYPX8eAjVCikIjHP0WJ1kxoHJSZjMLFsZcP-8wdbNuNrlOfp1jzw)
 
-**In the dataset `height_all_sites_res.mcmc.txt`.**
+**Datasets `height_all_sites_res.mcmc.txt`, `height_iberian_atlantic_res.mcmc.txt`, `height_french_atlantic_res.mcmc.txt` and `height_mediterranean_res.mcmc.txt`.**
 
-This file corresponds to the piMASS outputs of the Bayesian variable selection regression [VSR] implemented in the piMASS software ([Guan & Stephens 2011](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-5/issue-3/Bayesian-variable-selection-regression-for-genome-wide-association-studies-and/10.1214/11-AOAS455.full)) and which allows the identification of SNPs associated with the phenotype (here BLUPs for height estimated across the five CLONAPIN common gardens). 
+These files correspond to the piMASS outputs of the Bayesian variable selection regression [VSR] implemented in the piMASS software ([Guan & Stephens 2011](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-5/issue-3/Bayesian-variable-selection-regression-for-genome-wide-association-studies-and/10.1214/11-AOAS455.full)) and which allows the identification of SNPs associated with the phenotypes. Here, the phenotypes are BLUPs for height estimated in:
 
-Accroding the [piMASS manual](https://www.haplotype.org/download/pimass-manual.pdf), the output file contains:
+  - the five CLONAPIN common gardens for the file `height_all_sites_res.mcmc.txt`.
+  - the Iberian Atlantic common gardens (Asturias and Portugal) for the file  `height_iberian_atlantic_res.mcmc.txt`.
+  - the French Atlantic common garden (Bordeaux) for the file `height_french_atlantic_res.mcmc.txt`.
+  - the Mediterranean common gardens (Madrid and Cáceres) for the file `height_mediterranean_res.mcmc.txt`.
+
+Accroding the [piMASS manual](https://www.haplotype.org/download/pimass-manual.pdf), the output files contain:
 
   - `rs`: SNP ID.
   - `chr`: chromosome (no information on it in Miguel et al. 2022, so there are only '0').
