@@ -9,8 +9,8 @@
 
 # In this script, we calculate the gene-pool specific genomic relationship matrices (GRM) following the steps below:
 # 1/ keeping only alleles that are not associated with height (i.e. the 'neutral' alleles)
-# 2/ calculate a global GRM
-# 3/ calculate gene-pool specific GRM
+# 2/ calculate a GRM based on all gene pools
+# 3/ calculate gene-pool specific GRMs
 
 # More details can be found here:
 #  - for steps 1 and 2: https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/reports/ExplanatoryVariables/GenomicRelationshipMatrices.Rmd
@@ -18,13 +18,13 @@
 
 
 # Packages:
-library(readr)
-library(AGHmatrix)
-library(gplots)
-library(matrixcalc)
-library(Matrix)
-library(tidyverse)
-library(bdsmatrix)
+library(readr)      # Read Rectangular Text Data, CRAN v1.3.1
+library(AGHmatrix)  # Relationship Matrices for Diploid and Autopolyploid Species, CRAN v1.0.2
+library(gplots)     # Various R Programming Tools for Plotting Data, CRAN v3.0.1.2
+library(matrixcalc) # Collection of functions for matrix calculations, CRAN v1.0-3
+library(Matrix)     # Sparse and Dense Matrix Classes and Methods, CRAN v1.2-18
+library(tidyverse)  # Easily Install and Load the 'Tidyverse', CRAN v1.3.0
+library(bdsmatrix)  # Routines for Block Diagonal Symmetric Matrices, CRAN v1.3-3
 
 
 
@@ -46,7 +46,7 @@ geno <- read.csv("~/Documents/Pinpin_Clonapin/HeightPinpinClonapin/data_DRYAD/Ge
 # piMASS = Posterior inference using Model Averaging and Subset Selection. Details here: https://stephenslab.uchicago.edu/software.html#pimass
 
 # We load the piMASS outputs:
-beta.snp <- read_delim("data/piMASSoutputs/height_all_sites_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+beta.snp <- read_delim("data_DRYAD/height_all_sites_res.mcmc.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
 
 
 
@@ -206,3 +206,4 @@ is.symmetric.matrix(as.matrix(A6))
 is.positive.definite(as.matrix(A6))
 A6 <- nearPD(A6)
 write.csv(as.matrix(A6$mat), file= paste0("data_DRYAD/GRM_A6.csv"))
+
