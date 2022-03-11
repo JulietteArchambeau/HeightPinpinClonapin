@@ -2355,6 +2355,8 @@ df %>% knitr::kable(digits = 3 ,format = "markdown")
 
 #### Median 
 
+In the Supplementary Information.
+
 ```{r TableM3MedianSiteIntercepts}
 df <- mod %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level = 0.95) %>% 
   filter(str_detect(term, "^(r_site\\[)")) %>% 
@@ -2367,7 +2369,13 @@ df <- mod %>% broom::tidyMCMC(estimate.method = "median",conf.int = T,conf.level
                               'r_site[portugal,Intercept]'="$S_{Portugal}$")) %>% 
   remove_rownames() %>%
   dplyr::select(Parameter,Median,SD,InfCI,SupCI)
+
 df %>% knitr::kable(digits = 3 ,format = "markdown")
+
+print(xtable(df, type = "latex",digits=3), 
+      file = paste0("tables/Posteriors/M3_SiteInterceptsPost.tex"), 
+      include.rownames=FALSE,
+      sanitize.text.function = function(x) {x})
 ```
 
 
