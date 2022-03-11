@@ -291,15 +291,15 @@ figtot
 ggsave(figtot,file=paste0("../../figs/SuppInfo/M7M8Posteriors",part,".png"),height=12,width=20)
 ```
 
-## Figure in the manuscript
+<!-- ## Figure in the manuscript (finally not used in the last version of the manuscript) -->
 
-```{r figM8, fig.width=10,fig.height=14,message=F,warning=F}
-if(part == "P1"){
-figM8 <- ggarrange(figs.GP[[2]], figs.beta[[2]],labels=c("A)","B)"),
-          font.label = list(size = 20),hjust=c(-0.1,-0.1),vjust=c(1.6,1.6),nrow=2)
-ggsave(figM8,file=paste0("../../figs/manuscript/M8Posteriors",part,".png"),height=14,width=11)  
-}
-```
+<!-- ```{r figM8, fig.width=10,fig.height=14,message=F,warning=F} -->
+<!-- if(part == "P1"){ -->
+<!-- figM8 <- ggarrange(figs.GP[[2]], figs.beta[[2]],labels=c("A)","B)"), -->
+<!--           font.label = list(size = 20),hjust=c(-0.1,-0.1),vjust=c(1.6,1.6),nrow=2) -->
+<!-- ggsave(figM8,file=paste0("../../figs/manuscript/M8Posteriors",part,".png"),height=14,width=11)   -->
+<!-- } -->
+<!-- ``` -->
 
 ##  Figure 1 bis (not used in the manuscript) 
 
