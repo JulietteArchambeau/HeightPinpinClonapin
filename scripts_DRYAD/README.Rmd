@@ -104,6 +104,30 @@ The gene pool-specific genomic relationship matrices (GRM) are calculated in the
 
 ## Code
 
-It was run on *R version 3.6.3* and *RStudio version 1.1.463*.
+Available in the following *zenodo* repository:
 
-The code included in this repository constitutes the code necessary to replicate the analyses in the paper published in *The American Naturalist* from the data in this same repository. An extended version of the code can be found in the github repository [https://github.com/JulietteArchambeau/HeightPinpinClonapin](https://github.com/JulietteArchambeau/HeightPinpinClonapin), where data sorting from a larger phenotypic database (inlcuding all traits measured in the common gardens of the [CLONAPIN network](https://www6.bordeaux-aquitaine.inrae.fr/biogeco/Ressources/In-situ-dispositifs-de-terrain-observation-experimentation/Tests-de-provenances/CLONAPIN)), climate and soil data extraction,additional exploratory analyses, model output analyses and visualizations are included.
+The code included in the present *zenodo* repository was run on *R version 3.6.3* and *RStudio version 1.1.463* and constitutes the code necessary to replicate the analyses of the present Am Nat paper.
+
+Here is what the different scripts are for:
+
+  - `1_DetailsExperimentalDesign.R`: to create the tables S1, S2 and S3 describing the experimental design of the study.
+  - `2_ExploreCorrelationsClimaticVariables.R`: to build the figures S4, S5, S7 and S8 describing the correlations among the variables related to the climatic conditions in the common gardens and at the location of the provenances and the variables related to the population genetic structure (the proportion of gene pool assignement for each clone).
+  - `3_CreateClimaticSimilarityMatrices.R`: to create the covariance matrices describing the climatic similarity among test sites during the year preceding the measurements (shown in Figure S6 and used in models *M3* to *M6*) and the climatic similarity among provenances (shown in Figure S9 and used in model *M6*).
+  - `4_CalculateGenePoolSpecificGRM.R`: to create the gene pool-specific genomic relationship matrices (GRMs) that were then used to calculate gene pool-specific total genetic variance and broad-sense heritabilities in model *M6*.
+  - `5_CalculateCountsPEAs.R`: to calculate the counts of global and regional height-associated positive-effect alleles (gPEAs and rPEAs, respectively) based on the GWAS outputs from [Miguel et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16367?casa_token=1nNTc88Iy40AAAAA%3ALd4EOK5ehk_cEHIkw5A9l8nk0NPzUzlYPX8eAjVCikIjHP0WJ1kxoHJSZjMLFsZcP-8wdbNuNrlOfp1jzw).
+  - `6_FitBayesianModelsP1Partition.R`: to fit the hierarchical Bayesian height-growth models on the P1 partition with the *brms* R package. 
+  - `7_FitBayesianModelsP2Partition.R`: to fit the hierarchical Bayesian height-growth models on the P2 partition with the *brms* R package. 
+  - `8_FitBayesianModelsP3Partition.R`: to fit the hierarchical Bayesian height-growth models on the P3 partition with the *brms* R package. 
+  - `9_PrepareTestDatasetsForModelEvalutation.R`: to format the test datasets which are then used to evaluate the model predictive ability.
+  - `10_EvaluateModelPerformance.R`: to evaluate the goodness-of-fit and predictive ability of the models.
+  - `11_CreateFigure2.R`: to build Figure 2 related to the genetic and plastic bases of height-growth variation and their potential underlying drivers.
+  - `12_CreateFigures4andS10.R`: to build Figures 4 and S10 aimed at visualizing the out-of-sample and in-sample model predictive ability, respectively.
+  - `13_CreateTablesFiguresPosteriorDistributions.R`: to create the tables and figures of the model posterior distributions found in Section 6 of the Supplementary Information.
+  - `14_ExtracteGenePoolH2_TableS27S28andFigureS13.R`: to extract from model *M5* the gene pool-specific total genetic variances and heritabilities.
+  - `15_CreateFigureS14.R`: to build Figure S14 showing the posterior distributions of the provenance, gene pool and provenance climate intercepts from models *M4*, *M5* and *M6*.
+  - `16_CreateFiguresS15toS20.R`: to build Figures S15 to S20 showing the posterior distribution of gene pool intercepts and the site-specific intercepts of the gPEAs, rPEAs, the minimum precipitation during the driest month and the maximum temperature of the warmest month in models *M7* to *M12*.
+  - `17_QstFstAnalysis.R`: to perform the $Q_{ST}-F_{ST}$ analysis mentioned in Section 5.2 of the Discussion.
+  - `18_CheckDistributionHeightCaceresMadrid_FigS21.R`: to build Figure S21 aimed at checking the height distributions in Cáceres and Madrid (see Section 5.3 of the Discussion). 
+
+
+An extended version of the code can be found in the github repository [https://github.com/JulietteArchambeau/HeightPinpinClonapin](https://github.com/JulietteArchambeau/HeightPinpinClonapin), where data sorting from a larger phenotypic database (inlcuding all traits measured in the common gardens of the [CLONAPIN network](https://www6.bordeaux-aquitaine.inrae.fr/biogeco/Ressources/In-situ-dispositifs-de-terrain-observation-experimentation/Tests-de-provenances/CLONAPIN)), climate and soil data extraction,additional exploratory analyses, model output analyses and visualizations are included.

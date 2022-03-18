@@ -80,7 +80,7 @@ prob=0.95
 probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
 quantile(qst, probs = probs)
 
-# Extract the mean
+# Extract the median
 median(qst)
 ```
 

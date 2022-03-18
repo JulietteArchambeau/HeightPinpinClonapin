@@ -1,26 +1,27 @@
-########################################################################################################"
-##################                                                               #######################"
-##################              Models fitted on the P3 partition                #######################"
-##################                  with the package "brms"                      #######################"
-##################                                                               #######################"
-########################################################################################################"
+########################################################################################################################"
+#                                                                                                                      #
+#                   Fitting models on the P2 partition with the brms package                                           #
+#                                                                                                                      #
+#                                   Juliette Archambeau                                                                #
+#                                       18/03/2022                                                                     #
+#                                                                                                                      #
+########################################################################################################################"
 
-# P3 partition:
-# Sampled provenances (not totally randomly)
+# P2 partition:
+# Randomly sampled provenances
 # 28 provenances in the train dataset
 
-
+# All models were saved after fitting, but are not included in the DRYAD repository as they are very heavy.
 
 # LIBRARIES:
-library(dplyr) # A Grammar of Data Manipulation, CRAN v1.0.0
-library(brms) # Bayesian Regression Models using 'Stan', CRAN v2.11.1
+library(dplyr) # CRAN v1.0.0
+library(brms)  # CRAN v2.11.1
 options(mc.cores = parallel::detectCores())
-library(readr) # Read Rectangular Text Data, CRAN v1.3.1
-
+library(readr) # CRAN v1.3.1
 
 # Load data:
 data <- read_csv("data_DRYAD/HeightClimateSoilData_33121obs_32variables.csv") %>% 
-  dplyr::filter(P3=="train")
+  dplyr::filter(P2=="train")
 
 
 # AGE
@@ -42,8 +43,14 @@ filter_at(data,c(paste0("prop_Q",rep(1:6))),any_vars(. < 0))
 data$prop_Q6[data$prop_Q6<0] <- 0
 
 
+## Site climatic similarity
+# Load the variance-covariance matrix of env. variables
+envmat_site <- read.csv(file="data_DRYAD/VarCovMatSites.csv", row.names=1) %>% as.matrix()
+               # Creating a column for the random effect of env. covariance
+data$site_age <- paste0(data$site,data$age)
 
-# Count of PEAs
+
+# Count of PEAS
 snp.counts <- readRDS(file="data/CountPEAs.RDS")
 data <- merge(data,snp.counts,by="clon")
 rm(snp.counts)
@@ -68,7 +75,6 @@ data$tmn_min_1y_site.sc <- (data$tmn_min_1y_site - mean(data$tmn_min_1y_site)) /
 data$tmx_max_1y_site.sc <- (data$tmx_max_1y_site - mean(data$tmx_max_1y_site)) / sd(data$tmx_max_1y_site)
 data$tmx_mean_1y_site.sc <- (data$tmx_mean_1y_site - mean(data$tmx_mean_1y_site)) / sd(data$tmx_mean_1y_site)
 
-
 # Provenance climatic variables
 data$bio14_prov.sc <- (data$bio14_prov - mean(data$bio14_prov)) / sd(data$bio14_prov)
 data$bio5_prov.sc <- (data$bio5_prov - mean(data$bio5_prov)) / sd(data$bio5_prov)
@@ -85,7 +91,7 @@ mod0 <- brm(log(height) ~  age.sc + I(age.sc^2) + (1|site/block),
             
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=2000)
 
-# 
+
 # Warning messages:
 #   1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
 # http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
@@ -105,12 +111,7 @@ mod1 <- brm(log(height) ~  age.sc + I(age.sc^2) + (1|prov/clon) + (1|site/block)
             
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=2000)
 
-# 
-# Warning message:
-#   Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-# Running the chains for more iterations may help. See
-# http://mc-stan.org/misc/warnings.html#bulk-ess 
-
+# No warnings
 
 
 
@@ -125,17 +126,16 @@ mod2 <- brm(log(height) ~  age.sc + I(age.sc^2) + (1|prov/clon) + (1|site/block)
             
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=2000)
 
-
 # Warning messages:
-#   1: There were 2 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# 1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
 # http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
 # 2: Examine the pairs() plot to diagnose sampling problems
 
 
 
+
 #****************************************************************************************************************************** ####
 #           MODEL 7                                                                                                             ####
-
 
 mod7 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
               (1|mm(Q1,Q2,Q3,Q4,Q5,Q6, weights = cbind(prop_Q1,prop_Q2,prop_Q3,prop_Q4,prop_Q5,prop_Q6))) +
@@ -148,7 +148,7 @@ mod7 <- brm(log(height) ~  age.sc + I(age.sc^2) +
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 
 # Warning messages:
-#   1: There were 13 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+#   1: There were 18 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 # 2: Examine the pairs() plot to diagnose sampling problems
 
@@ -165,11 +165,13 @@ mod8 <- brm(log(height) ~  age.sc + I(age.sc^2) +
             
             data = data, family = "gaussian",
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
-# 
+
 # Warning messages:
-#   1: There were 1 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+#   1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
+# 2: There were 241 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-# 2: Examine the pairs() plot to diagnose sampling problems
+# 3: Examine the pairs() plot to diagnose sampling problems
 
 
 #****************************************************************************************************************************** ####
@@ -185,8 +187,13 @@ mod9 <- brm(log(height) ~  age.sc + I(age.sc^2) +
             data = data, family = "gaussian",
             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 
+# Warning messages:
+#   1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
+# 2: Examine the pairs() plot to diagnose sampling problems
 
-# No warnings!
+
+
 
 
 #****************************************************************************************************************************** ####
@@ -201,11 +208,16 @@ mod10 <- brm(log(height) ~  age.sc + I(age.sc^2) +
              data = data, family = "gaussian",
              control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 
-# 
 # Warning messages:
-#   1: There were 8 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+#   1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
+# 2: There were 38 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-# 2: Examine the pairs() plot to diagnose sampling problems
+# 3: Examine the pairs() plot to diagnose sampling problems
+
+
+
+
 
 #****************************************************************************************************************************** ####
 #          MODEL 11                                                                                                             ####
@@ -223,13 +235,9 @@ mod11 <- brm(log(height) ~  age.sc + I(age.sc^2) +
 # Warning messages:
 #   1: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
 # http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
-# 2: There were 150 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+# 2: There were 1151 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
 # 3: Examine the pairs() plot to diagnose sampling problems
-# 
-# 4: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-# Running the chains for more iterations may help. See
-# http://mc-stan.org/misc/warnings.html#bulk-ess 
 
 
 #****************************************************************************************************************************** ####
@@ -244,8 +252,31 @@ mod12 <- brm(log(height) ~  age.sc + I(age.sc^2) +
              data = data, family = "gaussian",
              control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
 
-# 
+
 # Warning messages:
-#   1: There were 46 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
+#   1: There were 3 divergent transitions after warmup. Increasing adapt_delta above 0.999 may help. See
+# http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup 
+# 2: There were 17 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 14. See
 # http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded 
-# 2: Examine the pairs() plot to diagnose sampling problems
+# 3: Examine the pairs() plot to diagnose sampling problems
+
+
+
+
+#****************************************************************************************************************************** ####
+#          MODEL 14                                                                                                             ####
+
+# We added a supplementary model with both rPEAs and gPEAs after a comment of reviewer #1
+
+
+mod14 <- brm(log(height) ~  age.sc + I(age.sc^2) + 
+               (rPEA.sc + gPEA.sc|site) + (1|block), 
+             
+             prior = c(prior(normal(0, 1), "b"),
+                       prior(normal(0, 5), "Intercept")),
+             
+             data = data, family = "gaussian",
+             control = list(adapt_delta=0.999,max_treedepth =14),chain=4,iter=3000)
+
+# 204 transitions that exceeded maximum treepdepth
+

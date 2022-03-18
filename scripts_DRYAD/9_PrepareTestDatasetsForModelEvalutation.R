@@ -3,12 +3,12 @@
 #                 Preparing the test datatests of the P1, P2 and P3 partitions                                         #
 #                                                                                                                      #
 #                                   Juliette Archambeau                                                                #
-#                                       10/03/2022                                                                     #
+#                                       18/03/2022                                                                     #
 #                                                                                                                      #
 ########################################################################################################################"
 
 
-library(dplyr)
+library(dplyr) # CRAN v1.0.0
 
 # Important: In the test datasets, the explanatory variables have to be normalized with the mean and variance of the *train* datasets
 # https://stackoverflow.com/questions/49444262/normalize-data-before-or-after-split-of-training-and-testing-data

@@ -3,23 +3,23 @@
 #                            Figure 2 of the Am Nat manuscript                                                         #
 #                                                                                                                      #
 #                                   Juliette Archambeau                                                                #
-#                                       11/03/2022                                                                     #
+#                                       18/03/2022                                                                     #
 #                                                                                                                      #
 ########################################################################################################################"
 
 # This figure aims at showing the variance partitioning and understanding the drivers behind the genetic and plastic components.
 
-library(dplyr)     # A Grammar of Data Manipulation, CRAN v1.0.0
-library(tidyverse) # Easily Install and Load the 'Tidyverse', CRAN v1.3.0
-library(ggpubr)    # 'ggplot2' Based Publication Ready Plots, CRAN v0.2.1
-library(cowplot)   # Streamlined Plot Theme and Plot Annotations for 'ggplot2', CRAN v1.0.0
-library(stringr)   # Simple, Consistent Wrappers for Common String Operations, CRAN v1.4.0
-library(rstanarm)  # Bayesian Applied Regression Modeling via Stan, CRAN v2.18.2
-library(ggforce)   # Accelerating 'ggplot2', CRAN v0.3.1
-library(tidybayes) # Tidy Data and 'Geoms' for Bayesian Models, CRAN v2.0.1
-library(latex2exp) # Use LaTeX Expressions in Plots, CRAN v0.4.0
-library(ggplot2)   # Create Elegant Data Visualisations Using the Grammar of Graphics, CRAN v3.3.1
-library(brms)      # Bayesian Regression Models using 'Stan', CRAN v2.11.1
+library(dplyr)     # CRAN v1.0.0
+library(tidyverse) # CRAN v1.3.0
+library(ggpubr)    # CRAN v0.2.1
+library(cowplot)   # CRAN v1.0.0
+library(stringr)   # CRAN v1.4.0
+library(rstanarm)  # CRAN v2.18.2
+library(ggforce)   # CRAN v0.3.1
+library(tidybayes) # CRAN v2.0.1
+library(latex2exp) # CRAN v0.4.0
+library(ggplot2)   # CRAN v3.3.1
+library(brms)      # CRAN v2.11.1
 
 
 ## Variance partitioning

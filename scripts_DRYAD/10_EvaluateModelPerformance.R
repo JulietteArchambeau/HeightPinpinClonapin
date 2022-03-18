@@ -3,19 +3,19 @@
 #                   Evalutating model goodness-of-fit and predictive ability                                           #
 #                                                                                                                      #
 #                                   Juliette Archambeau                                                                #
-#                                       11/03/2022                                                                     #
+#                                       18/03/2022                                                                     #
 #                                                                                                                      #
 ########################################################################################################################"
 
 
 
-library(loo)
-library(dplyr)
-library(tidyverse)
-library(stringr)
-library(xtable)
-library(brms)
-library(gdata)
+library(loo)       # CRAN v2.2.0
+library(dplyr)     # CRAN v1.0.0
+library(tidyverse) # CRAN v1.3.0
+library(stringr)   # CRAN v1.4.0
+library(xtable)    # CRAN v1.8-4
+library(brms)      # CRAN v2.11.1
+library(gdata)     # CRAN v2.18.0
 
 
 # Baseline model:

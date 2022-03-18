@@ -3,17 +3,17 @@
 #                       Figure S14 of the Supp Info in the Am Nat manuscript                                           #
 #                                                                                                                      #
 #                                   Juliette Archambeau                                                                #
-#                                       11/03/2022                                                                     #
+#                                       18/03/2022                                                                     #
 #                                                                                                                      #
 ########################################################################################################################"
 
 
-# This figure summarize the genetic response in models M3, M5 & M6
+# This figure summarizes the genetic response in models M3, M5 & M6
 
 
-library(cowplot)  # Streamlined Plot Theme and Plot Annotations for 'ggplot2', CRAN v1.0.0
-library(ggplot2)  # Create Elegant Data Visualisations Using the Grammar of Graphics, CRAN v3.3.1
-library(ggridges) # Ridgeline Plots in 'ggplot2', CRAN v0.5.1 
+library(cowplot)  # CRAN v1.0.0
+library(ggplot2)  # CRAN v3.3.1
+library(ggridges) # CRAN v0.5.1
 
 
 # Load the train dataset of the P1 partition:

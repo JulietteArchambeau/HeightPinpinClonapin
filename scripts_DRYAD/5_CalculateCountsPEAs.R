@@ -3,7 +3,7 @@
 #                  Calculating counts of height-associated positive-effect alleles (PEAs)                              #
 #                                                                                                                      #
 #                                   Juliette Archambeau                                                                #
-#                                       03/03/2022                                                                     #
+#                                       18/03/2022                                                                     #
 #                                                                                                                      #
 ########################################################################################################################"
 
@@ -35,9 +35,9 @@
 
 
 # Packages:
-library(ggvenn)  # Draw Venn Diagram by 'ggplot2', CRAN v0.1.9
-library(cowplot) # Streamlined Plot Theme and Plot Annotations for 'ggplot2', CRAN v1.0.0
-library(readr)   # Read Rectangular Text Data, CRAN v1.3.1
+library(ggvenn)  # CRAN v0.1.9
+library(cowplot) # CRAN v1.0.0
+library(readr)   # CRAN v1.3.1
 
 # Load the genomic data:
 geno <- read.csv("~/Documents/Pinpin_Clonapin/HeightPinpinClonapin/data_DRYAD/GenomicData_5165SNPs_523clones.csv", row.names=1)

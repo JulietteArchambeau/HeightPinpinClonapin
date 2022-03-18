@@ -3,18 +3,17 @@
 #        Creating covariance matrices describing the climatic similarity among provenances and test sites        #
 #                                                                                                                #
 #                                   Juliette Archambeau                                                          #
-#                                       03/02/2022                                                               #
+#                                       18/03/2022                                                               #
 #                                                                                                                #
 ##################################################################################################################
 
 
 # Detailed version of the script: https://github.com/JulietteArchambeau/HeightPinpinClonapin/blob/master/reports/ExplanatoryVariables/ClimSimMatrices.Rmd
 
-# Packages:
-library(readr)
-library(matrixcalc)
-library(Matrix)
-library(tidyverse)
+library(readr)      # CRAN v1.3.1
+library(matrixcalc) # CRAN v1.0-3
+library(Matrix)     # CRAN v1.2-18
+library(tidyverse)  # CRAN v1.3.0
 
 
 # Load data:
@@ -25,7 +24,7 @@ data <- read_csv("data_DRYAD/HeightClimateSoilData_33121obs_32variables.csv")
 # I) Climatic similarity among test sites during the year preceding the measurements
 # ==================================================================================
 
-# create a column to identify each unique combination of site + year of measurement (= different age of the trees).
+                    # create a column to identify each unique combination of site + year of measurement (= different age of the trees).
 data$site_age <- paste0(data$site,data$age)
 
 # selected variables:
