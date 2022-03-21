@@ -1,6 +1,6 @@
 # Data and code for the paper: 'Combining climatic and genomic data improves range-wide tree height growth prediction in a forest tree'
 
-**Authors:** Juliette Archambeau$^1$, Marta Benito Garzón$^1$, Frédéric Barraquand$^2$, Marina de Miguel Vega$^{1,3}$, Christophe Plomion$^1$ and Santiago C. González-Martínez$^1$
+**Authors:** Juliette Archambeau<sup>1</sup>, Marta Benito Garzón<sup>1</sup>, Frédéric Barraquand<sup>2</sup>, Marina de Miguel Vega<sup>1,3</sup>, Christophe Plomion<sup>1</sup> and Santiago C. González-Martínez<sup>1</sup>
 
 **1** INRAE, Univ. Bordeaux, BIOGECO, F-33610 Cestas, France
 
@@ -8,14 +8,15 @@
 
 **3** EGFV, Univ. Bordeaux, Bordeaux Sciences Agro, INRAE, ISVV, F-33882, Villenave d’Ornon, France
 
+**Corresponding author:** Juliette Archambeau, juli.archambeau@orange.fr
 
-**Published in *The American Naturalist* ** (manuscript # 60477R2)
+Published in *The American Naturalist* (manuscript # 60477R2)
 
 ## Data in the DRYAD repository
 
 ### Raw data
 
-#### Height and climatic data 
+#### Height, climate and population structure
 
 **In the dataset `HeightClimateSoilData_33121obs_25variables.csv`.**
 
@@ -28,38 +29,38 @@ Missing data are indicated with *NA*.
 
 Meaning of the columns:
 
-  - `obs`: unique code differentiating each observation (i.e. each height measurement)
-  - `tree`: tree identity
-  - `site`: test site (common garden)
-  - `clon`: clone (i.e. genotype)
-  - `prov`: provenance (i.e. population)
-  - `latitude_site`: latitude of the test site (in degrees)
-  - `longitude_site`: longitude of the test site (in degrees)
-  - `latitude_prov`: latitude of the provenance (in degrees)
-  - `longitude_prov`: longitude of the provenance (in degrees)
-  - `age`: tree age when the measurement was taken (in months)
-  - `height`: tree height (in mm)
-  - `pre_summer_min_site` (*min.presummer* in the manuscript): minimum of the monthly precipitation during summer -June to September- in the test sites during the year preceding the measurement (°C)
-  - `pre_mean_1y_site` (*mean.pre* in the manuscript): mean of the monthly precipitation in the test sites during the year preceding the measurement (mm)
-  - `tmn_min_1y_site` (*min.tmn* in the manuscript):  minimum of the monthly minimum temperatures in the test sites during the year preceding the measurement (°C)
-  - `tmx_max_1y_site` (*max.tmx* in the manuscript): maximum of the monthly maximum temperatures in the test sites during the year preceding the measurement (°C)
-  - `pre_max_1y_site` (*max.pre* in the manuscript): maximum of the monthly precipitation in the test sites during the year preceding the measurement (mm)
-  - `tmx_mean_1y_site` (*mean.tmax* in the manuscript): mean of monthly maximum temperatures in the test sites during the year preceding the measurement (°C)
-  - `bio1_prov` (*mean.temp* in the manuscript): average of the annual daily mean temperature in the provenances over the period from 1901 to 2009 (°C).
-  - `bio5_prov` (*max.temp* in the manuscript): average of the maximum temperature of the warmest month in the provenances over the period from 1901 to 2009 (°C).
-  - `bio12_prov` (*min.pre* in the manuscript): average of the precipitation of the driest month in the provenances over the period from 1901 to 2009 (mm).
-  - `bio14_prov` (*mean.pre* in the manuscript): average of the annual precipitation in the provenances over the period from 1901 to 2009 (mm).
-  - `Q1`: proportion of assignment to the northern African (NA) gene pool for each clone.
-  - `Q2`: proportion of assignment to the Corsican (C) gene pool for each clone.
-  - `Q3`: proportion of assignment to the central Spain (CS) gene pool for each clone.
-  - `Q4`: proportion of assignment to the French Atlantic (FA) gene pool for each clone.
-  - `Q5`: proportion of assignment to the Iberian Atlantic (IA) gene pool for each clone.
-  - `Q6`: proportion of assignment to the south-eastern Spain (SES) gene pool for each clone.
-  - `max.Qvalue`: proportion of assignment to the main gene pool for each clone.
-  - `max.Q`: main gene pool for each clone.
-  - `P1`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P1 partition.
-  - `P2`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P2 partition.
-  - `P3`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P3 partition.
+  1. `obs`: unique code differentiating each observation (i.e. each height measurement)
+  2. `tree`: tree identity
+  3. `site`: test site (common garden)
+  4. `clon`: clone (i.e. genotype)
+  5. `prov`: provenance (i.e. population)
+  6. `latitude_site`: latitude of the test site (in degrees)
+  7. `longitude_site`: longitude of the test site (in degrees)
+  8. `latitude_prov`: latitude of the provenance (in degrees)
+  9. `longitude_prov`: longitude of the provenance (in degrees)
+  10. `age`: tree age when the measurement was taken (in months)
+  11. `height`: tree height (in mm)
+  12. `pre_summer_min_site` (*min.presummer* in the manuscript): minimum of the monthly precipitation during summer -June to September- in the test sites during the year preceding the measurement (°C)
+  13. `pre_mean_1y_site` (*mean.pre* in the manuscript): mean of the monthly precipitation in the test sites during the year preceding the measurement (mm)
+  14. `tmn_min_1y_site` (*min.tmn* in the manuscript):  minimum of the monthly minimum temperatures in the test sites during the year preceding the measurement (°C)
+  15. `tmx_max_1y_site` (*max.tmx* in the manuscript): maximum of the monthly maximum temperatures in the test sites during the year preceding the measurement (°C)
+  16. `pre_max_1y_site` (*max.pre* in the manuscript): maximum of the monthly precipitation in the test sites during the year preceding the measurement (mm)
+  17. `tmx_mean_1y_site` (*mean.tmax* in the manuscript): mean of monthly maximum temperatures in the test sites during the year preceding the measurement (°C)
+  18. `bio1_prov` (*mean.temp* in the manuscript): average of the annual daily mean temperature in the provenances over the period from 1901 to 2009 (°C).
+  19. `bio5_prov` (*max.temp* in the manuscript): average of the maximum temperature of the warmest month in the provenances over the period from 1901 to 2009 (°C).
+  20. `bio12_prov` (*min.pre* in the manuscript): average of the precipitation of the driest month in the provenances over the period from 1901 to 2009 (mm).
+  21. `bio14_prov` (*mean.pre* in the manuscript): average of the annual precipitation in the provenances over the period from 1901 to 2009 (mm).
+  22. `Q1`: proportion of assignment to the northern African (NA) gene pool for each clone.
+  23. `Q2`: proportion of assignment to the Corsican (C) gene pool for each clone.
+  24. `Q3`: proportion of assignment to the central Spain (CS) gene pool for each clone.
+  25. `Q4`: proportion of assignment to the French Atlantic (FA) gene pool for each clone.
+  26. `Q5`: proportion of assignment to the Iberian Atlantic (IA) gene pool for each clone.
+  27. `Q6`: proportion of assignment to the south-eastern Spain (SES) gene pool for each clone.
+  28. `max.Qvalue`: proportion of assignment to the main gene pool for each clone.
+  29. `max.Q`: main gene pool for each clone.
+  30. `P1`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P1 partition.
+  31. `P2`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P2 partition.
+  32. `P3`: qualitative variable indicating the assignment of each observation to the test or train dataset of the P3 partition.
   
 
 
@@ -67,21 +68,25 @@ Meaning of the columns:
 
 **In the dataset `GenomicData_5165SNPs_523clones.csv`.**
 
-This file contains the genotype (noted as 0, 1 or 2) of each clone. There are 5,165 SNPs in rows and 523 clones in columns. Missing data are indicated with *NA*. 
+This file contains the genotype (noted as 0, 1 or 2) of each clone. 
+
+5,165 SNPs in rows and 523 clones in columns. 
+
+Missing data are indicated with *NA*. 
 
 
-#### piMASS outputs from de [Miguel et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16367?casa_token=1nNTc88Iy40AAAAA%3ALd4EOK5ehk_cEHIkw5A9l8nk0NPzUzlYPX8eAjVCikIjHP0WJ1kxoHJSZjMLFsZcP-8wdbNuNrlOfp1jzw)
+#### piMASS outputs from [de Miguel et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16367?casa_token=1nNTc88Iy40AAAAA%3ALd4EOK5ehk_cEHIkw5A9l8nk0NPzUzlYPX8eAjVCikIjHP0WJ1kxoHJSZjMLFsZcP-8wdbNuNrlOfp1jzw)
 
 **Datasets `height_all_sites_res.mcmc.txt`, `height_iberian_atlantic_res.mcmc.txt`, `height_french_atlantic_res.mcmc.txt` and `height_mediterranean_res.mcmc.txt`.**
 
-These files correspond to the piMASS outputs of the Bayesian variable selection regression [VSR] implemented in the piMASS software ([Guan & Stephens 2011](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-5/issue-3/Bayesian-variable-selection-regression-for-genome-wide-association-studies-and/10.1214/11-AOAS455.full)) and which allows the identification of SNPs associated with the phenotypes. Here, the phenotypes are BLUPs for height estimated in:
+These files correspond to the piMASS outputs of the Bayesian variable selection regression (BVSR) implemented in the piMASS software ([Guan & Stephens 2011](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-5/issue-3/Bayesian-variable-selection-regression-for-genome-wide-association-studies-and/10.1214/11-AOAS455.full)) and which allows the identification of SNPs associated with the phenotypes. Here, the phenotypes are BLUPs for height estimated in:
 
   - the five CLONAPIN common gardens for the file `height_all_sites_res.mcmc.txt`.
   - the Iberian Atlantic common gardens (Asturias and Portugal) for the file  `height_iberian_atlantic_res.mcmc.txt`.
   - the French Atlantic common garden (Bordeaux) for the file `height_french_atlantic_res.mcmc.txt`.
   - the Mediterranean common gardens (Madrid and Cáceres) for the file `height_mediterranean_res.mcmc.txt`.
 
-Accroding the [piMASS manual](https://www.haplotype.org/download/pimass-manual.pdf), the output files contain:
+According to the [piMASS manual](https://www.haplotype.org/download/pimass-manual.pdf), the output files contain:
 
   - `rs`: SNP ID.
   - `chr`: chromosome (no information on it in Miguel et al. 2022, so there are only '0').
@@ -93,17 +98,71 @@ Accroding the [piMASS manual](https://www.haplotype.org/download/pimass-manual.p
 
 ### Intermediate files
 
+#### Climatic similarity matrices
+
+**File `VarCovMatSites.csv`**: covariance matrix describing the climatic similarity among test sites during the year preceding the measurements (Figure S6). 
+
+**File `VarCovMatProvenancesP1.csv`**: covariance matrix describing the climatic similarity among provenances over the period 1901 to 2009 (Figure S9).
+
+The climatic similarity matrices are calculated in the script `3_CreateClimaticSimilarityMatrices.R` and are then used in models *M3* to *M6*.
+
 #### Gene pool-specific GRMs
 
-**Files `GRM_AX.csv`, with *X* being the gene pool number.**
+**Files `GRM_AX.csv`**
 
-The gene pool-specific genomic relationship matrices (GRM) are calculated in the script `2_CalculateGenePoolSpecificGRM.R` and are then used when fitting *model M5*.
+with *X* being the gene pool ID:
+
+  - 1 for Northern Africa
+  - 2 for Corsica
+  - 3 for Central Spain
+  - 4 for the Atlantic part of France
+  - 5 for the Atlantic part of the Iberian peninsula
+  - 6 for South-eastern Spain
+
+
+The gene pool-specific genomic relationship matrices (GRM) are calculated in the script `4_CalculateGenePoolSpecificGRM.R` and are then used when fitting *model M5*.
+
+#### Counts of height-associated positive-effect alleles (PEAs)
+
+**File `CountPEAs.csv`**
+
+Meaning of the columns:
+
+  1. `clon`: Clone (i.e. genotype) ID.
+  2. `count_all_350`: PEA counts based on the BVSR run over the five common gardens (i.e. see file `height_all_sites_res.mcmc.txt`).
+  3. `count_fratl_350`: PEA counts based on the BVSR run over the Iberian Atlantic common gardens (Asturias and Portugal) (i.e. see `height_iberian_atlantic_res.mcmc.txt`).
+  4. `count_ibatl_350`: PEA counts based on the BVSR run over in the French Atlantic common garden (Bordeaux) (i.e. see `height_french_atlantic_res.mcmc.txt`).
+  5. `count_med_350`:  PEA counts based on the BVSR run over the the Mediterranean common gardens (Madrid and Cáceres)(i.e. see `height_mediterranean_res.mcmc.txt`).
+  
+
+The count of global and regional PEAs (gPEAs and rPEAs, respectively) are calculated in the script `5_CalculateCountsPEAs.R` and are then used in models *M7*, *M8*, *M11* and *M12*.
+
+#### Test datasets of the three partitions
+
+**Files `TestP1prepared.csv`, `TestP2prepared.csv` and `TestP3prepared.csv`:** test datasets of the P1, P2 and P3 partitions, respectively.
+
+Meaning of the columns:
+
+  - *Columns 1 to 21.* same columns as in the file `HeightClimateSoilData_33121obs_25variables.csv`.
+  - *Columns 22 to 27.* same columns as the columns `Q1`, `Q2`, `Q3`, `Q4`, `Q5` and  `Q6` of the file `HeightClimateSoilData_33121obs_25variables.csv`.
+  - *Columns 28 to 32.* same columns as in the file `HeightClimateSoilData_33121obs_25variables.csv`.
+  - *Column 33.* `age.sc`: tree age scaled based on the variance and mean of the train dataset of the corresponding partition.
+  - *Columns 34 to 45.* `Q1` to `Q6` and `clon1` to `clon6`: columns required to estimate one varying intercept for each gene pool based on the gene pool-specific GRMs in the *brms* R package. 
+  - *Column 46.* `site_age`: column for the varying intercept associated with the covariance matrix describing the climatic similarity among test sites during the year preceding the measurements.
+  - *Column 47.* `prov_clim`: column for the varying intercept associated with the covariance matrix describing the climatic similarity among provenances over the period 1901 to 2009.
+  - *Columns 48 to 51.* same columns as in the file `CountPEAs.csv`.
+  - *Column 52.* `rPEA`: counts of regional PEAs.
+  - *Column 53.* `rPEA.sc`: counts of regional PEAs scaled based on the variance and mean of the train dataset of the corresponding partition.
+  - *Column 54.* `gPEA.sc`: counts of global PEAs scaled based on the variance and mean of the train dataset of the corresponding partition.
+  - *Columns 55 to 61.* climatic variables (describing the climate at the location of the test sites and provenances) scaled based on the variance and mean of the train dataset of the corresponding partition.
+
+The test datasets of the three partitions are formatted in the script `9_PrepareTestDatasetsForModelEvalutation.R`.
 
 ## Scripts in Zenodo
 
 Available in the following *zenodo* repository:
 
-The code included in the present *zenodo* repository was run on *R version 3.6.3* and *RStudio version 1.1.463* and constitutes the code necessary to replicate the analyses of the present Am Nat paper.
+The code included in the present *zenodo* repository was run on *R version 3.6.3* and *RStudio version 1.1.463* and constitutes the code necessary to replicate the analyses of the present study.
 
 Here is what the different scripts are for:
 
@@ -127,4 +186,4 @@ Here is what the different scripts are for:
   - `18_CheckDistributionHeightCaceresMadrid_FigS21.R`: to build Figure S21 aimed at checking the height distributions in Cáceres and Madrid (see Section 5.3 of the Discussion). 
 
 
-An extended version of the code can be found in the github repository [https://github.com/JulietteArchambeau/HeightPinpinClonapin](https://github.com/JulietteArchambeau/HeightPinpinClonapin), where data sorting from a larger phenotypic database (inlcuding all traits measured in the common gardens of the [CLONAPIN network](https://www6.bordeaux-aquitaine.inrae.fr/biogeco/Ressources/In-situ-dispositifs-de-terrain-observation-experimentation/Tests-de-provenances/CLONAPIN)), climate and soil data extraction,additional exploratory analyses, model output analyses and visualizations are included.
+An extended (but much more messy!) version of the code can be found in the github repository [https://github.com/JulietteArchambeau/HeightPinpinClonapin](https://github.com/JulietteArchambeau/HeightPinpinClonapin), where data sorting from a larger phenotypic database (inlcuding all traits measured in the common gardens of the [CLONAPIN network](https://www6.bordeaux-aquitaine.inrae.fr/biogeco/Ressources/In-situ-dispositifs-de-terrain-observation-experimentation/Tests-de-provenances/CLONAPIN)), climate and soil data extraction and some additional analyses and visualizations are included.

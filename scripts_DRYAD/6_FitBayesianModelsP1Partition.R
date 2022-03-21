@@ -62,7 +62,7 @@ data$clon6 <- data$clon
 ## Site climatic similarity
 # Load the variance-covariance matrix of env. variables
 envmat_site <- read.csv(file="data_DRYAD/VarCovMatSites.csv", row.names=1) %>% as.matrix()
-               # Creating a column for the random effect of env. covariance
+# Creating a column for the random effect of env. covariance
 data$site_age <- paste0(data$site,data$age)
 
 
