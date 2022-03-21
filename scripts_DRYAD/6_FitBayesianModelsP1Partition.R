@@ -69,7 +69,7 @@ data$site_age <- paste0(data$site,data$age)
 # Provenance climatic similarity
 # Load the variance-covariance matrix of env. variables
 envmat_prov <- read.csv(file="data_DRYAD/VarCovMatProvenancesP1.csv", row.names=1) %>% as.matrix()
-               # Creating a column for the random effect of env. covariance between provenances
+# Creating a column for the random effect of env. covariance between provenances
 data$prov_clim <- data$prov
 
 

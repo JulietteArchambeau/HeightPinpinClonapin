@@ -229,7 +229,7 @@ p.all <- ggvenn(all.list)
 p.pos <- ggvenn(pos.list)
 p.neg <- ggvenn(neg.list)
 
-# Figure S2:
+# >>> Figure S2 ####
 p <- plot_grid(p.all,p.pos,p.neg,
                nrow=1,
                labels=c("All SNPs","Positive-effect SNPs","Negative-effect SNPs"),
@@ -259,7 +259,7 @@ p.all <- ggvenn(all.list,set_name_size=5)
 p.pos <- ggvenn(pos.list,set_name_size=5)
 p.neg <- ggvenn(neg.list,set_name_size=5)
 
-# Figure S3:
+# >>> Figure S3 ####
 p <- plot_grid(p.all,p.pos,p.neg,
                nrow=1,
                labels=c("All SNPs","Positive-effect SNPs","Negative-effect SNPs"),

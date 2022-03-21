@@ -9,6 +9,7 @@
 
 
 library(dplyr) # CRAN v1.0.0
+library(readr) # CRAN v1.3.1
 
 # Important: In the test datasets, the explanatory variables have to be normalized with the mean and variance of the *train* datasets
 # https://stackoverflow.com/questions/49444262/normalize-data-before-or-after-split-of-training-and-testing-data
@@ -16,7 +17,7 @@ library(dplyr) # CRAN v1.0.0
 
 
 # P1 (sampling random observations. Test data set of 25% observations)  ####
-############################################################################
+############################################################################"
 
 
 test <- read_csv("data_DRYAD/HeightClimateSoilData_33121obs_32variables.csv") %>%  dplyr::filter(P1=="test")
@@ -58,7 +59,7 @@ test$prov_clim <- test$prov
 
 
 # Count of PEAs
-snp.counts <- readRDS(file="data/CountPEAs.RDS")
+snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv", row.names = 1)
 test <- merge(test,snp.counts,by="clon")
 
 # Region-specific PEAs
@@ -98,7 +99,7 @@ write.csv(test, file= paste0("data_DRYAD/TestP1prepared.csv"), row.names = F)
 
 
 # P2 (randomly selected provenances - 6 provenances in the test data set)   ####
-################################################################################
+################################################################################"
 
 test <- read_csv("data_DRYAD/HeightClimateSoilData_33121obs_32variables.csv") %>%  dplyr::filter(P2=="test")
 train <- read_csv("data_DRYAD/HeightClimateSoilData_33121obs_32variables.csv") %>%  dplyr::filter(P2=="train")
@@ -139,7 +140,7 @@ test$prov_clim <- test$prov
 
 
 # Count of the SNPs
-snp.counts <- readRDS(file="data/CountPEAs.RDS")
+snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv", row.names = 1)
 test <- merge(test,snp.counts,by="clon")
 
 # Region-specific PEAs
@@ -181,7 +182,7 @@ write.csv(test, file= paste0("data_DRYAD/TestP2prepared.csv"), row.names = F)
 
 
 # P3 (selected provenances - 6 provenances in the test data set)     ####
-#########################################################################
+#########################################################################"
 
 test <- read_csv("data_DRYAD/HeightClimateSoilData_33121obs_32variables.csv") %>%  dplyr::filter(P3=="test")
 train <- read_csv("data_DRYAD/HeightClimateSoilData_33121obs_32variables.csv") %>%  dplyr::filter(P3=="train")
@@ -222,7 +223,7 @@ test$prov_clim <- test$prov
 
 
 # Count of the SNPs
-snp.counts <- readRDS(file="data/CountPEAs.RDS")
+snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv", row.names = 1)
 test <- merge(test,snp.counts,by="clon")
 
 

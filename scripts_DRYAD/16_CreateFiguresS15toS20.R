@@ -495,7 +495,7 @@ fig <- ggarrange(p1,p2,nrow=2)
 # >> Figures S16, S18 and S20 ####
 
 if(part=="P1"){
-  ggsave(fig, file=paste0("figs/manuscript/",part,"M9toM12PosteriorDistri.png"),width=20,height=12)  
+  ggsave(fig, file=paste0("figs/SuppInfo/",part,"M9toM12PosteriorDistri.png"),width=20,height=12)  
 } else{
   ggsave(fig, file=paste0("figs/SuppInfo/",part,"M9toM12PosteriorDistri.png"),width=20,height=12)  
 }

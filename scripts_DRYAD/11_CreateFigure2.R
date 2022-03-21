@@ -29,7 +29,7 @@ models <- lapply(name.models,function(x) readRDS(file=paste0("outputs/models/P1/
 names(models)  <- name.models
 
 
-### Function to extract R2 without age
+### Function to extract R2 without age ####
 VarPart <- function(fit) {
   
   # Phenotypic variance
@@ -93,7 +93,9 @@ VarPart <- function(fit) {
 
 tab <- lapply(models, VarPart)
 
-# Comment:  Table S5. is based on the numbers in the list 'tab'
+
+# >>>> Table S5 ####
+# Table S5 is based on the numbers in the list 'tab'
 
 
 

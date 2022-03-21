@@ -14,7 +14,6 @@ library(ggpubr)    # CRAN v0.2.1
 library(tidybayes) # CRAN v2.0.1
 library(dplyr)     # CRAN v1.0.0
 library(bayesplot) # CRAN v1.7.1
-color_scheme_set("green")
 library(xtable)    # CRAN v1.8-4
 library(ggridges)  # CRAN v0.5.1
 library(tidyverse) # CRAN v1.3.0
@@ -1419,8 +1418,8 @@ print(xtable(tab, type = "latex",digits=3),
 
 
 
-# >> Figures S15, S17 and S19 ####
-# --------------------------- "
+# >> Figures S15, S17 and S19. ####
+# ---------------------------- "
 
 # for the three partitions
 
@@ -1862,8 +1861,8 @@ print(xtable(tab, type = "latex",digits=3),
 
 
 
-# >> Figures S16, S18 and S20 ####
-# --------------------------- "
+# >> Figures S16, S18 and S20. ####
+# ---------------------------- "
 
 # for the three partitions
 

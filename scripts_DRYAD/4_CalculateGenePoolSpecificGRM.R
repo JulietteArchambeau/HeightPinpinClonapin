@@ -1,11 +1,11 @@
-##################################################################################################################
+##################################################################################################################"
 #                                                                                                                #
 #                      Calculating gene pool-specific genomic relationship matrices                              #
 #                                                                                                                #
 #                                   Juliette Archambeau                                                          #
 #                                      18/03/2022                                                                #
 #                                                                                                                #
-##################################################################################################################
+##################################################################################################################"
 
 # In this script, we calculate the gene-pool specific genomic relationship matrices (GRM) following the steps below:
 # 1/ keeping only alleles that are not associated with height (i.e. the 'neutral' alleles)
@@ -18,13 +18,13 @@
 
 
 # Packages:
-library(readr)      # Read Rectangular Text Data, CRAN v1.3.1
-library(AGHmatrix)  # Relationship Matrices for Diploid and Autopolyploid Species, CRAN v1.0.2
-library(gplots)     # Various R Programming Tools for Plotting Data, CRAN v3.0.1.2
-library(matrixcalc) # Collection of functions for matrix calculations, CRAN v1.0-3
-library(Matrix)     # Sparse and Dense Matrix Classes and Methods, CRAN v1.2-18
-library(tidyverse)  # Easily Install and Load the 'Tidyverse', CRAN v1.3.0
-library(bdsmatrix)  # Routines for Block Diagonal Symmetric Matrices, CRAN v1.3-3
+library(readr)      # CRAN v1.3.1
+library(AGHmatrix)  # CRAN v1.0.2
+library(gplots)     # CRAN v3.0.1.2
+library(matrixcalc) # CRAN v1.0-3
+library(Matrix)     # CRAN v1.2-18
+library(tidyverse)  # CRAN v1.3.0
+library(bdsmatrix)  # CRAN v1.3-3
 
 
 

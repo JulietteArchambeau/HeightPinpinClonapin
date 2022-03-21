@@ -28,7 +28,7 @@ p <- ggarrange(
     ggplot() + geom_histogram(aes(x=height),color="grey80", fill=vir_lite("deeppink",ds=ds),bins=50) + theme_bw() +
     labs(x="Height (mm)",y=""),
   
-  nrow=1,labels=c("A) Caceres","B) Madrid"),font.label = list(size=20))
+  nrow=1,labels=c("A) Cáceres","B) Madrid"),font.label = list(size=20))
 
 
 ggsave(p, file="figs/SuppInfo/ExploringData/DistributionHeightCaceresMadrid.png",width=14)

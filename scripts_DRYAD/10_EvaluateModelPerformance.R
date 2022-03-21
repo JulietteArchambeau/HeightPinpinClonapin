@@ -27,7 +27,7 @@ baseline <- "MOD2"
 # Data partition used to fit the models:
 part <- "P2" # choose between P1, P2 and P3
 
-# Path to the models:
+# Path to the models (not included in the DRYAD repository as too heavy):
 path= paste0("outputs/models/",part,"/")
 
 
@@ -69,6 +69,7 @@ for (i in 1:length(newmodels)){
   new_loos[[i]] <- readRDS(file=paste0(path,newmodels[i],".rds"))
 }
 
+# We save the loo results and they are not included in the DRYAD repository as too heavy:
 for (i in 1:length(new_loos)){
   myloo <- loo(new_loos[[i]],save_psis = F)
   saveRDS(myloo, file=paste0("outputs/loos/",part,"/loo_",newmodels[i],".rds"))

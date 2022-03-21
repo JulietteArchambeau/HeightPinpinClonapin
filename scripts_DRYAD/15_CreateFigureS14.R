@@ -11,9 +11,12 @@
 # This figure summarizes the genetic response in models M3, M5 & M6
 
 
-library(cowplot)  # CRAN v1.0.0
-library(ggplot2)  # CRAN v3.3.1
-library(ggridges) # CRAN v0.5.1
+library(cowplot)   # CRAN v1.0.0
+library(ggplot2)   # CRAN v3.3.1
+library(ggridges)  # CRAN v0.5.1
+library(tidyverse) # CRAN v1.3.0
+library(brms)      # CRAN v2.11.1
+library(latex2exp) # CRAN v0.4.0
 
 
 # Load the train dataset of the P1 partition:
