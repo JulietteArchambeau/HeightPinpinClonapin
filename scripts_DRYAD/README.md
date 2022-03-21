@@ -16,9 +16,11 @@ output:
 
 **Published in *The American Naturalist* ** (manuscript # 60477R2)
 
-## Data
+## Data in the DRYAD repository
 
-### Height and climatic data 
+### Raw data
+
+#### Height and climatic data 
 
 **In the dataset `HeightClimateSoilData_33121obs_25variables.csv`.**
 
@@ -66,14 +68,14 @@ Meaning of the columns:
   
 
 
-### Genomic data 
+#### Genomic data 
 
 **In the dataset `GenomicData_5165SNPs_523clones.csv`.**
 
 This file contains the genotype (noted as 0, 1 or 2) of each clone. There are 5,165 SNPs in rows and 523 clones in columns. Missing data are indicated with *NA*. 
 
 
-### piMASS outputs from de [Miguel et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16367?casa_token=1nNTc88Iy40AAAAA%3ALd4EOK5ehk_cEHIkw5A9l8nk0NPzUzlYPX8eAjVCikIjHP0WJ1kxoHJSZjMLFsZcP-8wdbNuNrlOfp1jzw)
+#### piMASS outputs from de [Miguel et al. (2022)](https://onlinelibrary.wiley.com/doi/full/10.1111/mec.16367?casa_token=1nNTc88Iy40AAAAA%3ALd4EOK5ehk_cEHIkw5A9l8nk0NPzUzlYPX8eAjVCikIjHP0WJ1kxoHJSZjMLFsZcP-8wdbNuNrlOfp1jzw)
 
 **Datasets `height_all_sites_res.mcmc.txt`, `height_iberian_atlantic_res.mcmc.txt`, `height_french_atlantic_res.mcmc.txt` and `height_mediterranean_res.mcmc.txt`.**
 
@@ -94,15 +96,15 @@ Accroding the [piMASS manual](https://www.haplotype.org/download/pimass-manual.p
   - `beta`: the naive estimates of the posterior effect size.
   - `betarb`: **Rao-Blackwellized estimates of the posterior effect size, that are used in the present study to differentiate height-associated SNPs from SNPs not associated with height (i.e. 'neutral' SNPs).**
 
-## Intermediate files
+### Intermediate files
 
-### Gene pool-specific GRMs
+#### Gene pool-specific GRMs
 
 **Files `GRM_AX.csv`, with *X* being the gene pool number.**
 
 The gene pool-specific genomic relationship matrices (GRM) are calculated in the script `2_CalculateGenePoolSpecificGRM.R` and are then used when fitting *model M5*.
 
-## Code
+## Scripts in Zenodo
 
 Available in the following *zenodo* repository:
 
