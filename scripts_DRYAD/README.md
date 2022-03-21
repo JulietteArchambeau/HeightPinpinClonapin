@@ -1,8 +1,3 @@
----
-output:
-  html_document: default
-  pdf_document: default
----
 # Data and code for the paper: 'Combining climatic and genomic data improves range-wide tree height growth prediction in a forest tree'
 
 **Authors:** Juliette Archambeau$^1$, Marta Benito Garzón$^1$, Frédéric Barraquand$^2$, Marina de Miguel Vega$^{1,3}$, Christophe Plomion$^1$ and Santiago C. González-Martínez$^1$
