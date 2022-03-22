@@ -74,7 +74,7 @@ data$prov_clim <- data$prov
 
 
 # Count of the PEAs
-snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv", row.names = 1)
+snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv")
 data <- merge(data,snp.counts,by="clon")
 rm(snp.counts)
 

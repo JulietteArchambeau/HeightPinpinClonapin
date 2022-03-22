@@ -202,7 +202,7 @@ DF <- merge(DF,df,by="clon")
 
 # We save the dataframe with the counts of gPEAs (1 column: 'count_all_350') 
 # and the counts of rPEAs (3 columns: 'count_fratl_350', 'count_ibatl_350' and 'count_med_350') 
-write.csv(DF, file= "data_DRYAD/CountPEAs.csv")
+write.csv(DF, file= "data_DRYAD/CountPEAs.csv", row.names = F)
 
 
 

@@ -59,7 +59,7 @@ test$prov_clim <- test$prov
 
 
 # Count of PEAs
-snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv", row.names = 1)
+snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv")
 test <- merge(test,snp.counts,by="clon")
 
 # Region-specific PEAs
@@ -140,7 +140,7 @@ test$prov_clim <- test$prov
 
 
 # Count of the SNPs
-snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv", row.names = 1)
+snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv")
 test <- merge(test,snp.counts,by="clon")
 
 # Region-specific PEAs
@@ -223,7 +223,7 @@ test$prov_clim <- test$prov
 
 
 # Count of the SNPs
-snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv", row.names = 1)
+snp.counts <- read.csv(file="data_DRYAD/CountPEAs.csv")
 test <- merge(test,snp.counts,by="clon")
 
 
