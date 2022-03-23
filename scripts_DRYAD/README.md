@@ -160,8 +160,6 @@ The test datasets of the three partitions are formatted in the script `9_Prepare
 
 ## Scripts in Zenodo
 
-Available in the following *zenodo* repository:
-
 The code included in the present *zenodo* repository was run on *R version 3.6.3* and *RStudio version 1.1.463* and constitutes the code necessary to replicate the analyses of the present study.
 
 Here is what the different scripts are for:
