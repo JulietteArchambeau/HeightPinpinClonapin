@@ -124,7 +124,7 @@ p <- df %>%
   guides(fill = guide_colourbar(barwidth = 1, barheight = 20,title.vjust = 3))
 
 ggsave(p,file=paste0("figs/manuscript/ModelComparisonP1P2P3AfterReview2_",baseline,".png"),width = 10,height = 12)
-
+ggsave(p, file="figs/manuscript/FinalRevision/Figure4.pdf",device="pdf",height=12,width=10)
 
 # I) Proportion of explained variance conditional on age  ####
 # ======================================================  "
