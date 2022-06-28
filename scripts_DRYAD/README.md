@@ -1,6 +1,6 @@
 # Data and code for the paper: 'Combining climatic and genomic data improves range-wide tree height growth prediction in a forest tree'
 
-**Authors:** Juliette Archambeau<sup>1</sup>, Marta Benito Garzón<sup>1</sup>, Frédéric Barraquand<sup>2</sup>, Marina de Miguel Vega<sup>1,3</sup>, Christophe Plomion<sup>1</sup> and Santiago C. González-Martínez<sup>1</sup>
+**Authors:** Juliette Archambeau<sup>1</sup>, Marta Benito Garzón<sup>1</sup>, Frédéric Barraquand<sup>2</sup>, Marina de Miguel<sup>1,3</sup>, Christophe Plomion<sup>1</sup> and Santiago C. González-Martínez<sup>1</sup>
 
 **1** INRAE, Univ. Bordeaux, BIOGECO, F-33610 Cestas, France
 
@@ -10,7 +10,7 @@
 
 **Corresponding author:** Juliette Archambeau, juli.archambeau@orange.fr
 
-Published in *The American Naturalist* (manuscript # 60477R2)
+Published in *The American Naturalist* (manuscript # 60477R2), [paper available here](https://www.journals.uchicago.edu/doi/abs/10.1086/720619?journalCode=an).
 
 ## Data in the DRYAD repository
 
