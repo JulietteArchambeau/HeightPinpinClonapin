@@ -4,7 +4,7 @@
 This repository contains the scripts needed to reproduce the analyses in Archambeau et al. 2021 *Combining climatic and genomic data improves
 range-wide tree height growth prediction in a forest tree*
 
-Preprint avaibale here: https://www.biorxiv.org/content/10.1101/2020.11.13.382515v2
+Published in *The American Naturalist*: https://www.journals.uchicago.edu/doi/full/10.1086/720619
 
 
 **Paper abstract**
